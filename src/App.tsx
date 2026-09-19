@@ -29,9 +29,13 @@ function escapeHtml(value: string): string {
 
 function formatMessage(text: string): string {
   return escapeHtml(text)
-    .replace(/```([\s\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>')
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/```([\s\S]*?)```/g, '<div class="code-block"><pre><code>$1</code></pre></div>')
+    .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)/gm, '<span class="list-item">• $1</span>')
+    .replace(/^(\d+)\. (.+)/gm, '<span class="list-item">$1. $2</span>')
+    .replace(/^---$/gm, '<hr class="my-3 opacity-20" />')
     .replace(/\n/g, '<br>');
 }
 
@@ -40,18 +44,18 @@ function replyTo(text: string, previous?: string): string {
   const prev = previous?.toLowerCase() || '';
   const nameMatch = text.match(/(?:my name is|call me)\s+([a-z][a-z '-]{1,30})/i);
 
-  if (nameMatch) return `Nice to meet you, **${nameMatch[1].trim()}**! I\u2019ll remember that for this conversation. What would you like to work on?`;
-  if (/^(hi|hello|hey|yo|good morning|good afternoon|good evening|sup)\b/i.test(text)) return "Hey! It\u2019s good to hear from you. \u2728\n\nWe can talk about whatever is on your mind\u2014your day, ideas, entertainment, relationships, plans, or something completely random. What\u2019s up?";
+  if (nameMatch) return `Nice to meet you, **${nameMatch[1].trim()}**! I\u2019ll remember that for this conversation.\n\nWhat would you like to work on?`;
+  if (/^(hi|hello|hey|yo|good morning|good afternoon|good evening|sup)\b/i.test(text)) return "Hey! It\u2019s good to hear from you. \u2728\n\nWe can talk about whatever is on your mind\u2014your day, ideas, entertainment, relationships, plans, or something completely random.\n\nWhat\u2019s up?";
   if (/\b(thanks|thank you|thx)\b/.test(lower)) return "You\u2019re welcome! I\u2019m happy to help\u2014or we can just keep chatting. What are you thinking about?";
   if (lower.includes('how are you')) return "I\u2019m doing well and glad you\u2019re here. How are you doing today?";
-  if (/\b(i am|i'm|im|i feel)\s+(sad|depressed|lonely|upset|angry|stressed|anxious|tired|happy|excited|bored|confused)\b/i.test(text)) return "Thanks for telling me. That sounds like a real feeling, and you don\u2019t have to explain it perfectly.\n\nDo you want to:\n- Vent about what\u2019s going on\n- Figure out what caused it\n- Think of something that might help right now\n\nJust let me know which direction feels right.";
+  if (/\b(i am|i'm|im|i feel)\s+(sad|depressed|lonely|upset|angry|stressed|anxious|tired|happy|excited|bored|confused)\b/i.test(text)) return "Thanks for telling me. That sounds like a real feeling, and you don\u2019t have to explain it perfectly.\n\n- Vent about what\u2019s going on\n- Figure out what caused it\n- Think of something that might help right now\n\nJust let me know which direction feels right.";
   if (/\b(lonely|no friends|friendless|feel alone)\b/.test(lower)) return "I\u2019m sorry you\u2019re feeling alone. I can keep you company and listen.\n\nIf you want, tell me what happened today, or we can talk about a hobby, show, game, or topic you enjoy. Sometimes just having someone to chat with makes a difference.";
   if (/\b(boyfriend|girlfriend|crush|dating|relationship|breakup|love|friend drama)\b/.test(lower)) return "Relationships can be complicated. I can listen without judging, help you sort out what you\u2019re feeling, or help draft a message. What happened?";
   if (/\b(bored|fun|entertain me|something to do|activity)\b/.test(lower)) return "Let\u2019s fix that! Here are some ideas:\n\n- Play **20 questions** or **would you rather**\n- Make up a story together\n- Brainstorm a weird invention\n- Do a trivia quiz\n- Plan a meal or trip\n- Talk about movies, music, or games\n\nPick a direction\u2014or say \u201csurprise me.\u201d";
-  if (/\b(joke|make me laugh|funny)\b/.test(lower)) return "Why did the computer go to the doctor?\n\nBecause it had a virus! 😄\n\nI\u2019ll be here all week\u2014try the assistant!";
+  if (/\b(joke|make me laugh|funny)\b/.test(lower)) return "Why did the computer go to the doctor?\n\nBecause it had a virus! 😄\n\n---\n\nI\u2019ll be here all week\u2014try the assistant!";
   if (/\b(movie|film|tv|television|show|series|anime|book|music|song|game|gaming)\b/.test(lower)) return "I\u2019d love to talk about that! Tell me what you\u2019re watching, reading, listening to, or playing.\n\nI can discuss:\n- Themes and symbolism\n- Character development\n- Recommendations based on your taste\n- Hot takes and debates\n\nWhat\u2019s on your mind?";
   if (/\b(opinion|think about|thoughts on|favorite|recommend)\b/.test(lower)) return "I can give you a thoughtful take, compare different perspectives, or help you decide. Tell me the topic and what matters most to you.";
-  if (/\b(my day|today|this morning|this week|weekend|plans|plan my day)\b/.test(lower)) return "Tell me what your day looks like and what you want to get done. I can help:\n\n- **Prioritize** your tasks\n- Make a **realistic plan**\n- Talk through how things are going\n\nWhat\u2019s on your plate?";
+  if (/\b(my day|today|this morning|this week|weekend|plans|plan my day)\b/.test(lower)) return "Tell me what your day looks like and what you want to get done.\n\nI can help:\n- **Prioritize** your tasks\n- Make a **realistic plan**\n- Talk through how things are going\n\nWhat\u2019s on your plate?";
   if (/\b(what are you|who are you|your name)\b/.test(lower)) return "I\u2019m **Claude**, a conversational AI assistant by Anthropic.\n\nI can answer questions, brainstorm, write, explain, plan, and keep you company. I don\u2019t have a personal life, but I\u2019m always happy to hear about yours.";
   if (/\b(tell me about yourself|talk to me|keep me company|chat with me)\b/.test(lower)) return "Sure\u2014I\u2019m here. We can have a relaxed conversation about your day, interests, ideas, goals, or anything random.\n\nTo start: what\u2019s something you\u2019ve been enjoying lately?";
   if (/\b(i like|i love|my favorite|i enjoy)\b/.test(lower)) return "That sounds interesting! What do you like most about it, and how did you get into it?";
@@ -88,7 +92,7 @@ function replyTo(text: string, previous?: string): string {
     return "I can help with grammar, reading analysis, essays, and creative writing.\n\nA strong response usually has:\n- A clear **claim**\n- Supporting **evidence**\n- Your **explanation**\n- A link back to the question\n\nPaste your draft or assignment and tell me the required length and level.";
   }
   if (/\b(computer science|coding|javascript|python|html|css|programming|algorithm|code)\b/.test(lower)) {
-    return "I can help debug code, explain programming concepts, or design an algorithm.\n\nShare:\n- The **code** you have\n- The **expected result**\n- What **actually happens**\n\nI\u2019ll explain the fix so you can understand it, not just copy it.";
+    return "I can help debug code, explain programming concepts, or design an algorithm.\n\nShare:\n- The **code** you have\n- The **expected result**\n- What **actually happens**\n\nI\u2019ll explain the fix so you can understand it, not just copy it.\n\n```javascript\n// Example: I can help with code like this\nfunction fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}\n```";
   }
   if (/\b(weather|forecast|temperature)\b/.test(lower)) return "I can\u2019t access live weather data in this demo. But tell me the city and date, and I can help you interpret a forecast you paste here or plan what to pack.";
   if (/\b(recipe|cook|cooking|dinner|lunch|breakfast)\b/.test(lower)) return "I can help with that! Tell me:\n\n- Your **ingredients**\n- **Dietary needs**\n- Available **time**\n- How many **people** you\u2019re serving\n\nAnd I\u2019ll suggest a practical recipe.";
@@ -114,9 +118,8 @@ export default function App() {
   const [isTyping, setIsTyping] = useState(false);
   const [streamingText, setStreamingText] = useState('');
   const [savedConversations, setSavedConversations] = useState<SavedConversation[]>(() => {
-    try {
-      return JSON.parse(localStorage.getItem('fex-conversations') || '[]');
-    } catch { return []; }
+    try { return JSON.parse(localStorage.getItem('fex-conversations') || '[]'); }
+    catch { return []; }
   });
   const [activeIndex, setActiveIndex] = useState(-1);
   const [toast, setToast] = useState('');
@@ -151,25 +154,15 @@ export default function App() {
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 220)}px`;
     }
   }, [prompt]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        resetChat();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-        e.preventDefault();
-        textareaRef.current?.focus();
-      }
-      if (e.key === 'Escape') {
-        setSidebarOpen(false);
-        setShowSearch(false);
-      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); resetChat(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); textareaRef.current?.focus(); }
+      if (e.key === 'Escape') { setSidebarOpen(false); setShowSearch(false); }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -178,7 +171,7 @@ export default function App() {
   const showToast = useCallback((text: string) => {
     setToast(text);
     if (toastTimeout.current) clearTimeout(toastTimeout.current);
-    toastTimeout.current = setTimeout(() => setToast(''), 2200);
+    toastTimeout.current = setTimeout(() => setToast(''), 2500);
   }, []);
 
   const copyToClipboard = useCallback((text: string, id: string) => {
@@ -193,36 +186,27 @@ export default function App() {
     setIsTyping(true);
     setStreamingText('');
     let currentIndex = 0;
-    const charsPerTick = Math.max(2, Math.floor(fullText.length / 60));
+    const charsPerTick = Math.max(2, Math.floor(fullText.length / 80));
 
     streamInterval.current = setInterval(() => {
       currentIndex += charsPerTick;
       if (currentIndex >= fullText.length) {
         currentIndex = fullText.length;
         clearInterval(streamInterval.current);
-
-        const assistantMsg: ChatMessage = {
-          role: 'assistant',
-          text: fullText,
-          time: formatTime(),
-          id: generateId()
-        };
+        const assistantMsg: ChatMessage = { role: 'assistant', text: fullText, time: formatTime(), id: generateId() };
         const updatedMessages = [...newMessages, assistantMsg];
         setMessages(updatedMessages);
         setIsTyping(false);
         setStreamingText('');
-
         setSavedConversations(prev => {
           const copy = [...prev];
-          if (newIndex >= 0 && copy[newIndex]) {
-            copy[newIndex] = { ...copy[newIndex], messages: updatedMessages };
-          }
+          if (newIndex >= 0 && copy[newIndex]) copy[newIndex] = { ...copy[newIndex], messages: updatedMessages };
           return copy;
         });
       } else {
         setStreamingText(fullText.slice(0, currentIndex));
       }
-    }, 25);
+    }, 20);
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -238,8 +222,7 @@ export default function App() {
     setAttachments([]);
 
     let newIndex = activeIndex;
-    let newConversations = [...savedConversations];
-
+    const newConversations = [...savedConversations];
     if (activeIndex < 0) {
       newIndex = savedConversations.length;
       const title = text.split('\n')[0].slice(0, 40) || 'New chat';
@@ -252,18 +235,11 @@ export default function App() {
     setSavedConversations(newConversations);
 
     const response = replyTo(text, messages.length >= 2 ? messages[messages.length - 2].text : undefined);
-    const delay = Math.min(800, Math.max(300, response.length * 3));
-
-    setTimeout(() => {
-      streamResponse(response, newMessages, newIndex);
-    }, delay);
+    setTimeout(() => streamResponse(response, newMessages, newIndex), Math.min(600, Math.max(200, response.length * 2)));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
   };
 
   const resetChat = () => {
@@ -289,18 +265,13 @@ export default function App() {
   };
 
   const clearChat = () => {
-    if (activeIndex >= 0) {
-      setSavedConversations(prev => prev.filter((_, i) => i !== activeIndex));
-    }
+    if (activeIndex >= 0) setSavedConversations(prev => prev.filter((_, i) => i !== activeIndex));
     resetChat();
     showToast('Chat cleared');
   };
 
   const exportChat = () => {
-    if (messages.length === 0) {
-      showToast('No messages to export');
-      return;
-    }
+    if (messages.length === 0) { showToast('No messages to export'); return; }
     const content = messages.map(m => `[${m.time}] ${m.role === 'user' ? 'You' : 'Claude'}: ${m.text}`).join('\n\n');
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -319,91 +290,104 @@ export default function App() {
     }
   };
 
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
+  const removeAttachment = (index: number) => setAttachments(prev => prev.filter((_, i) => i !== index));
 
   const filteredConversations = savedConversations
     .map((c, i) => ({ ...c, originalIndex: i }))
     .filter(c => !searchQuery || c.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const hoverBg = darkMode ? '#292825' : '#e5e2db';
-  const activeBg = darkMode ? '#302e2a' : '#e2dfd8';
-
   return (
-    <div className="min-h-screen no-theme-transition" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+    <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--bg)' }}>
+      {/* Ambient Background */}
+      <div className="ambient-bg">
+        <div className="ambient-orb ambient-orb-1" />
+        <div className="ambient-orb ambient-orb-2" />
+        <div className="ambient-orb ambient-orb-3" />
+      </div>
+      <div className="noise-overlay" />
+
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-screen flex flex-col z-30 transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 h-screen flex flex-col z-30 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0`}
-        style={{ width: 280, padding: '20px 14px 14px', background: 'var(--sidebar)', borderRight: '1px solid var(--line)' }}
-        aria-label="Conversation navigation"
+        } lg:translate-x-0`}
+        style={{ width: 290, background: 'var(--sidebar)', borderRight: '1px solid var(--line)' }}
       >
+        <div className="glass absolute inset-0" style={{ zIndex: -1 }} />
+
         {/* Brand */}
-        <div className="flex items-center gap-2.5 px-3 pb-5">
-          <span className="float-anim" style={{ color: 'var(--accent)', fontSize: 24 }}>✦</span>
-          <span className="text-xl font-semibold tracking-tight">Claude</span>
+        <div className="flex items-center gap-3 px-5 pt-6 pb-6">
+          <div className="relative">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold animate-breathe" style={{ background: 'var(--accent-gradient)' }}>
+              ✦
+            </div>
+            <div className="absolute inset-0 rounded-xl animate-breathe" style={{ background: 'var(--accent-gradient)', filter: 'blur(8px)', opacity: 0.4 }} />
+          </div>
+          <div>
+            <div className="text-lg font-bold tracking-tight" style={{ color: 'var(--text)' }}>Claude</div>
+            <div className="text-[10px] font-medium tracking-wide uppercase" style={{ color: 'var(--muted)' }}>AI Assistant</div>
+          </div>
         </div>
 
         {/* New Chat */}
-        <button
-          onClick={() => { resetChat(); }}
-          className="flex items-center gap-2.5 w-full px-3.5 py-3 rounded-xl text-left font-semibold text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-          style={{ border: '1px solid var(--line)', background: 'transparent' }}
-          onMouseEnter={e => (e.currentTarget.style.background = hoverBg)}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        >
-          <span className="text-lg">＋</span> New chat
-          <span className="ml-auto text-xs opacity-50 hidden md:inline">⌘K</span>
-        </button>
+        <div className="px-3 pb-2">
+          <button
+            onClick={() => { resetChat(); }}
+            className="btn-premium flex items-center gap-2.5 w-full px-4 py-3 rounded-xl text-left text-sm font-semibold"
+            style={{ background: 'var(--accent-gradient)', color: 'white', boxShadow: 'var(--shadow)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+            New chat
+            <span className="ml-auto text-xs opacity-60 hidden lg:inline">⌘K</span>
+          </button>
+        </div>
 
         {/* Search */}
         {showSearch && (
-          <div className="mt-3 fade-in">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full px-3 py-2 rounded-lg text-sm border-0 outline-none"
-              style={{ background: darkMode ? '#1e1e1c' : '#e5e2db', color: 'var(--text)' }}
-              autoFocus
-            />
+          <div className="px-3 pb-2 animate-fade-in">
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search conversations..."
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm border-0 outline-none"
+                style={{ background: 'var(--line)', color: 'var(--text)' }}
+                autoFocus
+              />
+            </div>
           </div>
         )}
 
         {/* Conversation List */}
-        <nav className="flex-1 overflow-y-auto pt-4 conversation-list" aria-label="Conversations">
+        <nav className="flex-1 overflow-y-auto premium-scroll px-2 py-2" aria-label="Conversations">
           {filteredConversations.length === 0 && searchQuery && (
-            <p className="text-center text-xs py-4" style={{ color: 'var(--muted)' }}>No matches found</p>
+            <p className="text-center text-xs py-8" style={{ color: 'var(--muted)' }}>No matches found</p>
           )}
           {filteredConversations.map((conv) => (
             <button
               key={conv.originalIndex}
               onClick={() => loadConversation(conv.originalIndex)}
-              className={`group flex items-center w-full text-left px-3 py-2.5 rounded-lg text-sm truncate transition-all duration-150 ${
-                conv.originalIndex === activeIndex ? 'font-medium' : ''
+              className={`sidebar-item group flex items-center w-full text-left px-3 py-2.5 rounded-xl text-sm transition-all duration-150 ${
+                conv.originalIndex === activeIndex ? 'active font-medium' : ''
               }`}
               style={{
-                background: conv.originalIndex === activeIndex ? activeBg : 'transparent',
-                color: conv.originalIndex === activeIndex ? 'var(--text)' : '#585650',
+                background: conv.originalIndex === activeIndex ? 'var(--accent-glow)' : 'transparent',
+                color: conv.originalIndex === activeIndex ? 'var(--text)' : 'var(--text-secondary)',
               }}
-              onMouseEnter={e => {
-                if (conv.originalIndex !== activeIndex) e.currentTarget.style.background = hoverBg;
-              }}
-              onMouseLeave={e => {
-                if (conv.originalIndex !== activeIndex) e.currentTarget.style.background = 'transparent';
-              }}
+              onMouseEnter={e => { if (conv.originalIndex !== activeIndex) e.currentTarget.style.background = 'var(--line)'; }}
+              onMouseLeave={e => { if (conv.originalIndex !== activeIndex) e.currentTarget.style.background = 'transparent'; }}
             >
+              <svg className="flex-shrink-0 mr-2.5 opacity-40" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
               <span className="truncate flex-1">{conv.title}</span>
               <span
-                className="ml-2 opacity-0 group-hover:opacity-60 text-xs cursor-pointer flex-shrink-0"
+                className="ml-2 opacity-0 group-hover:opacity-60 text-xs cursor-pointer flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-md hover:bg-black/10 transition-all"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSavedConversations(prev => prev.filter((_, i) => i !== conv.originalIndex));
                   if (conv.originalIndex === activeIndex) resetChat();
-                  showToast('Conversation deleted');
+                  showToast('Deleted');
                 }}
               >
                 ×
@@ -413,87 +397,100 @@ export default function App() {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="grid gap-1 pt-3" style={{ borderTop: '1px solid var(--line)' }}>
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-left text-sm transition-colors"
-            style={{ background: 'transparent', color: '#5d5a54' }}
-            onMouseEnter={e => (e.currentTarget.style.background = hoverBg)}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          >
-            🔍 <span>Search chats</span>
-          </button>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-left text-sm transition-colors"
-            style={{ background: 'transparent', color: '#5d5a54' }}
-            onMouseEnter={e => (e.currentTarget.style.background = hoverBg)}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          >
-            {darkMode ? '☀️' : '☾'} <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>
-          </button>
-          <button
-            onClick={() => showToast('Account settings coming soon')}
-            className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-left text-sm transition-colors"
-            style={{ background: 'transparent', color: '#5d5a54' }}
-            onMouseEnter={e => (e.currentTarget.style.background = hoverBg)}
-            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-          >
-            <span className="grid place-items-center w-7 h-7 rounded-full text-white text-xs font-medium" style={{ background: 'linear-gradient(135deg, #d97757, #e8a87c)' }}>Y</span>
-            <span>Your account</span>
-            <span className="ml-auto tracking-widest text-xs opacity-50">•••</span>
-          </button>
+        <div className="px-3 pb-4 pt-2" style={{ borderTop: '1px solid var(--line)' }}>
+          <div className="grid gap-0.5 pt-3">
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-left text-sm transition-all duration-150"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              <span>Search chats</span>
+            </button>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-left text-sm transition-all duration-150"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              {darkMode ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+              )}
+              <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>
+            </button>
+            <button
+              onClick={() => showToast('Account settings coming soon')}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-left text-sm transition-all duration-150"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: 'var(--accent-gradient)' }}>Y</div>
+              <span>Your account</span>
+              <span className="ml-auto opacity-40 text-xs">•••</span>
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* Main */}
-      <main className="min-h-screen md:ml-[280px]">
+      <main className="h-screen lg:ml-[290px] flex flex-col relative z-10">
         {/* Topbar */}
-        <header className="h-14 flex items-center justify-between px-4 md:px-6 glass sticky top-0 z-10" style={{ background: darkMode ? 'rgba(26,26,25,0.85)' : 'rgba(247,246,242,0.85)' }}>
+        <header className="h-14 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 glass" style={{ borderBottom: '1px solid var(--line)' }}>
           <button
-            className="md:hidden bg-transparent text-xl p-1"
+            className="lg:hidden p-2 rounded-xl transition-colors"
             onClick={() => setSidebarOpen(!sidebarOpen)}
+            style={{ color: 'var(--text-secondary)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             aria-label="Open menu"
           >
-            ☰
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
           </button>
 
-          <label className="flex items-center gap-2 mx-auto cursor-pointer group">
-            <span className="relative w-2 h-2 rounded-full status-pulse" style={{ background: '#61a878' }}></span>
+          <div className="flex items-center gap-2 mx-auto">
+            <div className="relative">
+              <span className="status-online w-2 h-2 rounded-full block" style={{ background: '#4ade80' }} />
+            </div>
             <select
               value={model}
               onChange={e => {
                 setModel(e.target.value);
-                const opt = e.target.options[e.target.selectedIndex];
-                showToast(`${opt.text} selected`);
+                showToast(`${e.target.options[e.target.selectedIndex].text} selected`);
               }}
-              className="appearance-none border-0 outline-0 px-1 py-1 bg-transparent cursor-pointer font-semibold text-sm group-hover:opacity-80 transition-opacity"
+              className="appearance-none border-0 outline-0 px-2 py-1 bg-transparent cursor-pointer font-semibold text-sm"
               style={{ color: 'var(--text)' }}
               aria-label="Choose Claude model"
             >
-              <option value="claude-sonnet" style={{ background: 'var(--panel)', color: 'var(--text)' }}>Claude Sonnet</option>
-              <option value="claude-opus" style={{ background: 'var(--panel)', color: 'var(--text)' }}>Claude Opus</option>
-              <option value="claude-haiku" style={{ background: 'var(--panel)', color: 'var(--text)' }}>Claude Haiku</option>
+              <option value="claude-sonnet" style={{ background: 'var(--panel)' }}>Claude Sonnet</option>
+              <option value="claude-opus" style={{ background: 'var(--panel)' }}>Claude Opus</option>
+              <option value="claude-haiku" style={{ background: 'var(--panel)' }}>Claude Haiku</option>
             </select>
-            <span className="pointer-events-none -ml-1 text-base" style={{ color: 'var(--muted)' }}>⌄</span>
-          </label>
+            <svg className="opacity-40" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </div>
 
           <div className="flex items-center gap-1">
             <button
               onClick={exportChat}
-              className="p-2 rounded-lg text-xs transition-colors"
-              style={{ background: 'transparent', color: 'var(--muted)' }}
-              onMouseEnter={e => { e.currentTarget.style.background = darkMode ? '#292825' : '#eae8e1'; e.currentTarget.style.color = 'var(--text)'; }}
+              className="tooltip p-2 rounded-xl transition-all duration-150"
+              data-tooltip="Export chat"
+              style={{ color: 'var(--muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--line)'; e.currentTarget.style.color = 'var(--text)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted)'; }}
-              title="Export chat"
             >
-              ↗
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 17l9.2-9.2M17 17V7H7"/></svg>
             </button>
             <button
               onClick={clearChat}
-              className="px-3 py-1.5 rounded-lg text-xs transition-colors"
-              style={{ background: 'transparent', color: 'var(--muted)' }}
-              onMouseEnter={e => { e.currentTarget.style.background = darkMode ? '#292825' : '#eae8e1'; e.currentTarget.style.color = 'var(--text)'; }}
+              className="tooltip px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-150"
+              data-tooltip="Clear conversation"
+              style={{ color: 'var(--muted)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--line)'; e.currentTarget.style.color = 'var(--text)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted)'; }}
             >
               Clear
@@ -501,148 +498,178 @@ export default function App() {
           </div>
         </header>
 
-        {/* Chat Shell */}
-        <section className="flex flex-col mx-auto px-4 md:px-6 pb-4" style={{ minHeight: 'calc(100vh - 56px)', maxWidth: 820, paddingTop: '5vh' }}>
-          <div className="flex-1" aria-live="polite">
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto premium-scroll" style={{ scrollBehavior: 'smooth' }}>
+          <div className="max-w-[800px] mx-auto px-4 lg:px-6 py-6">
             {/* Empty State */}
             {messages.length === 0 && !isTyping && !streamingText && (
-              <div className="text-center mx-auto fade-in" style={{ padding: '8vh 0 4vh' }}>
-                <div className="relative inline-block mb-6">
-                  <div className="text-5xl gradient-text float-anim">✦</div>
-                  <div className="absolute inset-0 text-5xl opacity-20 blur-sm" style={{ color: 'var(--accent)' }}>✦</div>
+              <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in-up">
+                {/* Animated Logo */}
+                <div className="relative mb-8">
+                  <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-white text-3xl animate-float" style={{ background: 'var(--accent-gradient)', boxShadow: '0 20px 60px rgba(201, 106, 58, 0.3)' }}>
+                    ✦
+                  </div>
+                  <div className="absolute inset-0 rounded-3xl animate-float" style={{ background: 'var(--accent-gradient)', filter: 'blur(24px)', opacity: 0.3, animationDelay: '0.5s' }} />
+                  <div className="absolute -inset-4 rounded-full animate-spin-slow" style={{ border: '1px dashed var(--line-strong)', opacity: 0.5 }} />
                 </div>
-                <h1 className="m-0 tracking-tight mb-2" style={{ font: "500 clamp(28px, 4vw, 40px)/1.15 'Newsreader', Georgia, serif" }}>
+
+                <h1 className="text-center mb-2" style={{ font: "600 clamp(28px, 4vw, 38px)/1.2 'Newsreader', Georgia, serif", letterSpacing: '-0.5px', color: 'var(--text)' }}>
                   How can I help you today?
                 </h1>
-                <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>Ask me anything, or try one of these ideas.</p>
-                <div className="flex justify-center flex-wrap gap-2.5 max-w-lg mx-auto">
+                <p className="text-sm text-center mb-10 max-w-sm" style={{ color: 'var(--muted)' }}>
+                  I can answer questions, help you write, brainstorm ideas, explain complex topics, and more.
+                </p>
+
+                {/* Suggestion Cards */}
+                <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
                   {[
-                    { label: '💡 Brainstorm ideas', prompt: 'Help me brainstorm ideas for a project' },
-                    { label: '🧠 Explain a complex topic', prompt: 'Explain quantum computing simply' },
-                    { label: '✍️ Help me write', prompt: 'Help me write an email' },
-                    { label: '📝 Summarize something', prompt: 'Summarize a long article for me' },
+                    { icon: '💡', label: 'Brainstorm', desc: 'Generate creative ideas', prompt: 'Help me brainstorm ideas for a project' },
+                    { icon: '🧠', label: 'Explain', desc: 'Break down complex topics', prompt: 'Explain quantum computing simply' },
+                    { icon: '✍️', label: 'Write', desc: 'Draft emails & documents', prompt: 'Help me write an email' },
+                    { icon: '📝', label: 'Summarize', desc: 'Condense long content', prompt: 'Summarize a long article for me' },
                   ].map((item, i) => (
                     <button
                       key={i}
                       onClick={() => { setPrompt(item.prompt); textareaRef.current?.focus(); }}
-                      className="px-4 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 hover:scale-105 active:scale-95"
-                      style={{ border: '1px solid var(--line)', background: 'var(--panel)', color: '#625f59', boxShadow: 'var(--shadow)' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--line)'; e.currentTarget.style.color = '#625f59'; }}
+                      className="suggestion-card flex flex-col items-start gap-1.5 p-4 rounded-2xl text-left border"
+                      style={{ background: 'var(--panel)', borderColor: 'var(--line)', boxShadow: 'var(--shadow-sm)' }}
                     >
-                      {item.label}
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{item.label}</span>
+                      <span className="text-xs" style={{ color: 'var(--muted)' }}>{item.desc}</span>
                     </button>
                   ))}
                 </div>
-                <p className="text-xs mt-8 opacity-50">⌘K for new chat · ⌘/ to focus input</p>
+
+                <div className="flex items-center gap-4 mt-10 text-[10px] font-medium" style={{ color: 'var(--muted-subtle)' }}>
+                  <span className="flex items-center gap-1.5">
+                    <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono" style={{ background: 'var(--line)', border: '1px solid var(--line-strong)' }}>⌘K</kbd>
+                    New chat
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono" style={{ background: 'var(--line)', border: '1px solid var(--line-strong)' }}>⌘/</kbd>
+                    Focus input
+                  </span>
+                </div>
               </div>
             )}
 
             {/* Messages */}
             {messages.map((msg, i) => (
               <div
-                key={msg.id || i}
-                className={`message-row flex gap-3 max-w-[720px] mx-auto my-5 leading-relaxed ${msg.role === 'user' ? 'justify-end msg-animate-right' : 'msg-animate-left'}`}
-                style={{ animationDelay: `${i * 0.05}s` }}
+                key={msg.id}
+                className={`message-row flex gap-3.5 py-4 ${msg.role === 'user' ? 'justify-end animate-slide-right' : 'animate-slide-left'}`}
+                style={{ animationDelay: `${Math.min(i * 0.03, 0.3)}s`, animationFillMode: 'both' }}
               >
                 {msg.role === 'assistant' && (
-                  <div className="flex-shrink-0 w-8 h-8 grid place-items-center rounded-full text-white text-sm shadow-sm" style={{ background: 'linear-gradient(135deg, var(--accent), #e8a87c)' }}>
+                  <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.2)' }}>
                     ✦
                   </div>
                 )}
-                <div className={`relative ${msg.role === 'user' ? 'max-w-[80%]' : 'max-w-[90%]'}`}>
+                <div className={`relative group ${msg.role === 'user' ? 'max-w-[75%]' : 'max-w-[85%]'}`}>
                   {msg.role === 'user' ? (
-                    <div className="px-4 py-3 text-sm" style={{ background: darkMode ? '#34312c' : '#e8e3da', borderRadius: '18px 18px 4px 18px' }}>
+                    <div className="px-4 py-3 text-sm leading-relaxed" style={{ background: 'var(--accent-gradient)', color: 'white', borderRadius: '20px 20px 4px 20px', boxShadow: '0 4px 16px rgba(201, 106, 58, 0.15)' }}>
                       <div className="whitespace-pre-wrap">{msg.text}</div>
-                      <div className="text-[10px] mt-1.5 opacity-60" style={{ color: 'var(--muted)' }}>{msg.time}</div>
                     </div>
                   ) : (
-                    <>
-                      <div className="whitespace-pre-wrap text-sm" dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }} />
-                      <div className="flex items-center gap-2 mt-2">
-                        <span className="text-[10px] opacity-60" style={{ color: 'var(--muted)' }}>Claude \u00b7 {msg.time}</span>
-                        <div className="msg-actions flex items-center gap-1">
-                          <button
-                            onClick={() => copyToClipboard(msg.text, msg.id)}
-                            className="p-1 rounded text-xs transition-colors"
-                            style={{ color: 'var(--muted)' }}
-                            onMouseEnter={e => (e.currentTarget.style.color = 'var(--accent)')}
-                            onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted)')}
-                            title="Copy message"
-                          >
-                            {copiedId === msg.id ? '✓' : '⎙'}
-                          </button>
-                        </div>
-                      </div>
-                    </>
+                    <div className="rounded-2xl px-4 py-3.5 text-sm leading-relaxed" style={{ background: 'var(--panel)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-sm)' }}>
+                      <div className="whitespace-pre-wrap" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }} />
+                    </div>
                   )}
+                  <div className={`flex items-center gap-2 mt-1.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <span className="text-[10px] font-medium" style={{ color: 'var(--muted-subtle)' }}>
+                      {msg.role === 'user' ? 'You' : 'Claude'} · {msg.time}
+                    </span>
+                    {msg.role === 'assistant' && (
+                      <div className="msg-actions flex items-center gap-0.5">
+                        <button
+                          onClick={() => copyToClipboard(msg.text, msg.id)}
+                          className="p-1 rounded-md transition-all duration-150"
+                          style={{ color: 'var(--muted)' }}
+                          onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-glow)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.color = 'var(--muted)'; e.currentTarget.style.background = 'transparent'; }}
+                          title="Copy"
+                        >
+                          {copiedId === msg.id ? (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                          ) : (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
 
-            {/* Streaming response */}
+            {/* Streaming */}
             {streamingText && (
-              <div className="message-row flex gap-3 max-w-[720px] mx-auto my-5 leading-relaxed msg-animate-left">
-                <div className="flex-shrink-0 w-8 h-8 grid place-items-center rounded-full text-white text-sm shadow-sm" style={{ background: 'linear-gradient(135deg, var(--accent), #e8a87c)' }}>
+              <div className="flex gap-3.5 py-4 animate-slide-left">
+                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.2)' }}>
                   ✦
                 </div>
-                <div className="max-w-[90%]">
-                  <div className="whitespace-pre-wrap text-sm" dangerouslySetInnerHTML={{ __html: formatMessage(streamingText) }} />
-                  <span className="streaming-cursor"></span>
+                <div className="max-w-[85%]">
+                  <div className="rounded-2xl px-4 py-3.5 text-sm leading-relaxed" style={{ background: 'var(--panel)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-sm)' }}>
+                    <div className="whitespace-pre-wrap" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: formatMessage(streamingText) }} />
+                    <span className="streaming-cursor" />
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Typing indicator */}
+            {/* Typing */}
             {isTyping && !streamingText && (
-              <div className="flex gap-3 max-w-[720px] mx-auto my-5 msg-animate-left">
-                <div className="flex-shrink-0 w-8 h-8 grid place-items-center rounded-full text-white text-sm shadow-sm" style={{ background: 'linear-gradient(135deg, var(--accent), #e8a87c)' }}>
+              <div className="flex gap-3.5 py-4 animate-slide-left">
+                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.2)' }}>
                   ✦
                 </div>
-                <div className="flex items-center gap-1.5 min-w-[52px] px-4 py-3 rounded-2xl" style={{ background: darkMode ? '#2a2926' : '#f0ede6' }}>
-                  <span className="typing-dot"></span>
-                  <span className="typing-dot"></span>
-                  <span className="typing-dot"></span>
+                <div className="flex items-center gap-2 px-4 py-3.5 rounded-2xl" style={{ background: 'var(--panel)', border: '1px solid var(--line)' }}>
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
+                  <span className="typing-dot" />
                 </div>
               </div>
             )}
 
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-4" />
           </div>
+        </div>
 
-          {/* Composer */}
-          <form onSubmit={handleSubmit} className="sticky bottom-0 pt-4 no-theme-transition" style={{ background: `linear-gradient(transparent, var(--bg) 30%)` }}>
-            <div
-              className="rounded-2xl px-4 pt-3.5 pb-2.5 transition-shadow duration-200"
-              style={{ border: '1px solid var(--line)', background: 'var(--panel)', boxShadow: 'var(--shadow)' }}
-            >
-              <textarea
-                ref={textareaRef}
-                value={prompt}
-                onChange={e => setPrompt(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={1}
-                placeholder="Message Claude..."
-                className="block w-full min-h-7 max-h-50 resize-none border-0 outline-0 bg-transparent leading-normal text-sm placeholder:opacity-50"
-                style={{ color: 'var(--text)' }}
-                aria-label="Write your prompt"
-              />
+        {/* Composer */}
+        <div className="flex-shrink-0 px-4 lg:px-6 pb-4 pt-2">
+          <form onSubmit={handleSubmit} className="max-w-[800px] mx-auto">
+            <div className="composer-glow rounded-2xl" style={{ background: 'var(--panel)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-lg)', borderRadius: 'var(--radius-lg)' }}>
+              <div className="p-4 pb-2">
+                <textarea
+                  ref={textareaRef}
+                  value={prompt}
+                  onChange={e => setPrompt(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  rows={1}
+                  placeholder="Message Claude..."
+                  className="block w-full min-h-[28px] max-h-[220px] resize-none border-0 outline-0 bg-transparent leading-relaxed text-sm placeholder:opacity-40"
+                  style={{ color: 'var(--text)', fontFamily: 'inherit' }}
+                  aria-label="Write your prompt"
+                />
+              </div>
 
+              {/* Attachments */}
               {attachments.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 px-4 pb-2">
                   {attachments.map((file, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium fade-in"
-                      style={{ background: darkMode ? '#2d2c2a' : '#f0ede6', color: 'var(--muted)' }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium animate-scale-in"
+                      style={{ background: 'var(--accent-glow)', color: 'var(--accent)', border: '1px solid color-mix(in srgb, var(--accent) 30%, transparent)' }}
                     >
-                      📎 {file.name}
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                      {file.name}
                       <button
                         type="button"
                         onClick={() => removeAttachment(i)}
-                        className="bg-transparent text-sm leading-none p-0 ml-1 hover:opacity-70"
-                        style={{ color: '#8d8880' }}
-                        aria-label={`Remove ${file.name}`}
+                        className="ml-1 w-4 h-4 flex items-center justify-center rounded-full text-[10px] hover:bg-black/10 transition-colors"
+                        style={{ color: 'var(--accent)' }}
                       >
                         ×
                       </button>
@@ -651,64 +678,68 @@ export default function App() {
                 </div>
               )}
 
-              <div className="flex items-center gap-2 pt-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  hidden
-                  multiple
-                  onChange={handleFileChange}
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-8 h-8 rounded-full text-lg transition-all duration-200 hover:scale-110 active:scale-90"
-                  style={{ background: 'transparent', color: 'var(--muted)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = darkMode ? '#292825' : '#f0ede6')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  aria-label="Attach a file"
-                >
-                  📎
-                </button>
-                <span className="flex-1 text-center text-[10px] hidden md:block" style={{ color: 'var(--muted)', opacity: 0.6 }}>
-                  Claude can make mistakes. Check important info.
-                </span>
-                <button
-                  type="submit"
-                  disabled={!prompt.trim() || isTyping}
-                  className="w-9 h-9 rounded-xl text-white text-lg leading-none transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100 cursor-pointer"
-                  style={{ background: prompt.trim() ? 'var(--accent)' : 'var(--text)' }}
-                  aria-label="Send message"
-                >
-                  ↑
-                </button>
+              {/* Bottom Bar */}
+              <div className="flex items-center justify-between px-3 pb-3 pt-1">
+                <div className="flex items-center gap-1">
+                  <input ref={fileInputRef} type="file" hidden multiple onChange={handleFileChange} />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="tooltip p-2 rounded-xl transition-all duration-200"
+                    data-tooltip="Attach file"
+                    style={{ color: 'var(--muted)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--line)'; e.currentTarget.style.color = 'var(--text)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted)'; }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-medium hidden sm:block" style={{ color: 'var(--muted-subtle)' }}>
+                    Claude can make mistakes
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={!prompt.trim() || isTyping}
+                    className="btn-premium w-9 h-9 rounded-xl flex items-center justify-center text-white transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ background: prompt.trim() && !isTyping ? 'var(--accent-gradient)' : 'var(--line)', boxShadow: prompt.trim() && !isTyping ? '0 4px 16px rgba(201, 106, 58, 0.3)' : 'none' }}
+                    aria-label="Send message"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                  </button>
+                </div>
               </div>
             </div>
           </form>
-        </section>
+        </div>
       </main>
 
       {/* Toast */}
       <div
-        className={`fixed left-1/2 bottom-6 z-50 px-4 py-2.5 rounded-xl text-xs font-medium text-white pointer-events-none transition-all duration-300 ${
-          toast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+        className={`fixed left-1/2 bottom-8 z-50 px-5 py-3 rounded-2xl text-xs font-semibold pointer-events-none transition-all duration-400 ${
+          toast ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
         }`}
         style={{
-          transform: `translateX(-50%) ${toast ? 'translateY(0)' : 'translateY(16px)'}`,
-          background: darkMode ? '#3a3935' : '#2d2b28',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+          transform: `translateX(-50%) ${toast ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.95)'}`,
+          background: 'var(--text)',
+          color: 'var(--bg)',
+          boxShadow: 'var(--shadow-xl)'
         }}
         role="status"
       >
-        {toast}
+        <div className="flex items-center gap-2">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          {toast}
+        </div>
       </div>
 
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 md:hidden fade-in"
+          className="fixed inset-0 z-20 lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
-          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)' }}
+          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
         />
       )}
     </div>
