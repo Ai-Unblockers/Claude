@@ -209,6 +209,36 @@ export default function App() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [previewTitle, setPreviewTitle] = useState('HTML Preview');
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'profile' | 'appearance' | 'chat' | 'data' | 'about'>('profile');
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('fex-settings') || '{}');
+      return {
+        name: saved.name || 'You',
+        email: saved.email || '',
+        bio: saved.bio || '',
+        fontSize: saved.fontSize || 'medium',
+        sendOnEnter: saved.sendOnEnter !== false,
+        showTimestamps: saved.showTimestamps !== false,
+        streamingEnabled: saved.streamingEnabled !== false,
+        compactMode: saved.compactMode || false,
+        accentColor: saved.accentColor || 'amber',
+      };
+    } catch {
+      return {
+        name: 'You',
+        email: '',
+        bio: '',
+        fontSize: 'medium',
+        sendOnEnter: true,
+        showTimestamps: true,
+        streamingEnabled: true,
+        compactMode: false,
+        accentColor: 'amber',
+      };
+    }
+  });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -231,6 +261,13 @@ export default function App() {
   }, [model]);
 
   useEffect(() => {
+    localStorage.setItem('fex-settings', JSON.stringify(settings));
+    // Apply font size
+    const sizes: Record<string, string> = { small: '13px', medium: '14px', large: '16px' };
+    document.documentElement.style.setProperty('--chat-font-size', sizes[settings.fontSize] || '14px');
+  }, [settings]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages, isTyping, streamingText]);
 
@@ -245,7 +282,8 @@ export default function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); resetChat(); }
       if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); textareaRef.current?.focus(); }
-      if (e.key === 'Escape') { setSidebarOpen(false); setShowSearch(false); }
+      if ((e.metaKey || e.ctrlKey) && e.key === ',') { e.preventDefault(); setShowSettings(true); }
+      if (e.key === 'Escape') { setSidebarOpen(false); setShowSearch(false); setShowSettings(false); }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -377,7 +415,7 @@ export default function App() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
+    if (e.key === 'Enter' && !e.shiftKey && settings.sendOnEnter) { e.preventDefault(); handleSubmit(e); }
   };
 
   const resetChat = () => {
@@ -548,6 +586,17 @@ export default function App() {
               <span>Search chats</span>
             </button>
             <button
+              onClick={() => setShowSettings(true)}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-left text-sm transition-all duration-150"
+              style={{ color: 'var(--text-secondary)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+              <span>Settings</span>
+              <span className="ml-auto opacity-40 text-xs hidden lg:inline">⌘,</span>
+            </button>
+            <button
               onClick={() => setDarkMode(!darkMode)}
               className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-left text-sm transition-all duration-150"
               style={{ color: 'var(--text-secondary)' }}
@@ -562,14 +611,16 @@ export default function App() {
               <span>{darkMode ? 'Light mode' : 'Dark mode'}</span>
             </button>
             <button
-              onClick={() => showToast('Account settings coming soon')}
+              onClick={() => setShowSettings(true)}
               className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-left text-sm transition-all duration-150"
               style={{ color: 'var(--text-secondary)' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: 'var(--accent-gradient)' }}>Y</div>
-              <span>Your account</span>
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: 'var(--accent-gradient)' }}>
+                {settings.name.charAt(0).toUpperCase()}
+              </div>
+              <span className="truncate">{settings.name}</span>
               <span className="ml-auto opacity-40 text-xs">•••</span>
             </button>
           </div>
@@ -710,7 +761,7 @@ export default function App() {
                       <div className="whitespace-pre-wrap">{msg.text}</div>
                     </div>
                   ) : (
-                    <div className="rounded-2xl px-4 py-3.5 text-sm leading-relaxed" style={{ background: 'var(--panel)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-sm)' }}>
+                    <div className="rounded-2xl px-4 py-3.5 leading-relaxed" style={{ background: 'var(--panel)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-sm)', fontSize: 'var(--chat-font-size)' }}>
                       <div className="whitespace-pre-wrap" style={{ color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }} />
                     </div>
                   )}
@@ -871,6 +922,392 @@ export default function App() {
           {toast}
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-4xl h-[85vh] flex rounded-2xl overflow-hidden animate-scale-in" style={{ background: 'var(--panel)', boxShadow: 'var(--shadow-xl)' }}>
+            {/* Sidebar */}
+            <div className="w-56 flex-shrink-0 flex flex-col p-4" style={{ background: 'var(--bg-elevated)', borderRight: '1px solid var(--line)' }}>
+              <div className="flex items-center gap-2 mb-6 px-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+                <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>Settings</span>
+              </div>
+              <nav className="flex flex-col gap-1">
+                {[
+                  { id: 'profile' as const, label: 'Profile', icon: '👤' },
+                  { id: 'appearance' as const, label: 'Appearance', icon: '🎨' },
+                  { id: 'chat' as const, label: 'Chat', icon: '💬' },
+                  { id: 'data' as const, label: 'Data & Privacy', icon: '🔒' },
+                  { id: 'about' as const, label: 'About', icon: 'ℹ️' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSettingsTab(tab.id)}
+                    className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left transition-all"
+                    style={{
+                      background: settingsTab === tab.id ? 'var(--accent-glow)' : 'transparent',
+                      color: settingsTab === tab.id ? 'var(--accent)' : 'var(--text-secondary)',
+                      fontWeight: settingsTab === tab.id ? 600 : 400,
+                    }}
+                    onMouseEnter={e => { if (settingsTab !== tab.id) e.currentTarget.style.background = 'var(--line)'; }}
+                    onMouseLeave={e => { if (settingsTab !== tab.id) e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </nav>
+              <div className="mt-auto pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm transition-all"
+                  style={{ color: 'var(--muted)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                  Close
+                </button>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto premium-scroll">
+              <div className="p-8 max-w-2xl">
+                {/* Profile Tab */}
+                {settingsTab === 'profile' && (
+                  <div className="animate-fade-in">
+                    <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text)' }}>Profile</h2>
+                    <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>Manage your account information</p>
+                    
+                    <div className="flex items-center gap-4 mb-8 p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                      <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white" style={{ background: 'var(--accent-gradient)' }}>
+                        {settings.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-semibold" style={{ color: 'var(--text)' }}>{settings.name}</div>
+                        <div className="text-xs" style={{ color: 'var(--muted)' }}>{settings.email || 'No email set'}</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Display Name</label>
+                        <input
+                          type="text"
+                          value={settings.name}
+                          onChange={e => setSettings({ ...settings, name: e.target.value })}
+                          className="w-full px-4 py-2.5 rounded-xl text-sm border-0 outline-none transition-all"
+                          style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--line)' }}
+                          onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                          onBlur={e => (e.currentTarget.style.borderColor = 'var(--line)')}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Email</label>
+                        <input
+                          type="email"
+                          value={settings.email}
+                          onChange={e => setSettings({ ...settings, email: e.target.value })}
+                          placeholder="your@email.com"
+                          className="w-full px-4 py-2.5 rounded-xl text-sm border-0 outline-none transition-all"
+                          style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--line)' }}
+                          onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                          onBlur={e => (e.currentTarget.style.borderColor = 'var(--line)')}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>Bio</label>
+                        <textarea
+                          value={settings.bio}
+                          onChange={e => setSettings({ ...settings, bio: e.target.value })}
+                          placeholder="Tell us about yourself..."
+                          rows={3}
+                          className="w-full px-4 py-2.5 rounded-xl text-sm border-0 outline-none resize-none transition-all"
+                          style={{ background: 'var(--bg-elevated)', color: 'var(--text)', border: '1px solid var(--line)' }}
+                          onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+                          onBlur={e => (e.currentTarget.style.borderColor = 'var(--line)')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Appearance Tab */}
+                {settingsTab === 'appearance' && (
+                  <div className="animate-fade-in">
+                    <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text)' }}>Appearance</h2>
+                    <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>Customize how Claude looks</p>
+
+                    <div className="space-y-8">
+                      <div>
+                        <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text)' }}>Theme</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <button
+                            onClick={() => setDarkMode(false)}
+                            className="p-4 rounded-xl text-left transition-all"
+                            style={{
+                              background: !darkMode ? 'var(--accent-glow)' : 'var(--bg-elevated)',
+                              border: !darkMode ? '2px solid var(--accent)' : '1px solid var(--line)',
+                            }}
+                          >
+                            <div className="text-2xl mb-2">☀️</div>
+                            <div className="font-medium text-sm" style={{ color: 'var(--text)' }}>Light</div>
+                          </button>
+                          <button
+                            onClick={() => setDarkMode(true)}
+                            className="p-4 rounded-xl text-left transition-all"
+                            style={{
+                              background: darkMode ? 'var(--accent-glow)' : 'var(--bg-elevated)',
+                              border: darkMode ? '2px solid var(--accent)' : '1px solid var(--line)',
+                            }}
+                          >
+                            <div className="text-2xl mb-2">🌙</div>
+                            <div className="font-medium text-sm" style={{ color: 'var(--text)' }}>Dark</div>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text)' }}>Font Size</label>
+                        <div className="grid grid-cols-3 gap-3">
+                          {['small', 'medium', 'large'].map(size => (
+                            <button
+                              key={size}
+                              onClick={() => setSettings({ ...settings, fontSize: size })}
+                              className="py-3 rounded-xl text-sm font-medium transition-all capitalize"
+                              style={{
+                                background: settings.fontSize === size ? 'var(--accent-glow)' : 'var(--bg-elevated)',
+                                border: settings.fontSize === size ? '2px solid var(--accent)' : '1px solid var(--line)',
+                                color: settings.fontSize === size ? 'var(--accent)' : 'var(--text-secondary)',
+                              }}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-3" style={{ color: 'var(--text)' }}>Accent Color</label>
+                        <div className="flex gap-3">
+                          {[
+                            { id: 'amber', color: '#c96a3a' },
+                            { id: 'blue', color: '#3b82f6' },
+                            { id: 'purple', color: '#8b5cf6' },
+                            { id: 'green', color: '#10b981' },
+                            { id: 'pink', color: '#ec4899' },
+                          ].map(accent => (
+                            <button
+                              key={accent.id}
+                              onClick={() => {
+                                setSettings({ ...settings, accentColor: accent.id });
+                                document.documentElement.style.setProperty('--accent', accent.color);
+                              }}
+                              className="w-10 h-10 rounded-full transition-all"
+                              style={{
+                                background: accent.color,
+                                border: settings.accentColor === accent.id ? '3px solid var(--text)' : '2px solid transparent',
+                                transform: settings.accentColor === accent.id ? 'scale(1.1)' : 'scale(1)',
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Chat Tab */}
+                {settingsTab === 'chat' && (
+                  <div className="animate-fade-in">
+                    <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text)' }}>Chat</h2>
+                    <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>Configure chat behavior</p>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: 'var(--text)' }}>Send on Enter</div>
+                          <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>Press Enter to send, Shift+Enter for new line</div>
+                        </div>
+                        <button
+                          onClick={() => setSettings({ ...settings, sendOnEnter: !settings.sendOnEnter })}
+                          className="relative w-11 h-6 rounded-full transition-colors"
+                          style={{ background: settings.sendOnEnter ? 'var(--accent)' : 'var(--line-strong)' }}
+                        >
+                          <div
+                            className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform"
+                            style={{ transform: settings.sendOnEnter ? 'translateX(22px)' : 'translateX(2px)' }}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: 'var(--text)' }}>Show Timestamps</div>
+                          <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>Display time for each message</div>
+                        </div>
+                        <button
+                          onClick={() => setSettings({ ...settings, showTimestamps: !settings.showTimestamps })}
+                          className="relative w-11 h-6 rounded-full transition-colors"
+                          style={{ background: settings.showTimestamps ? 'var(--accent)' : 'var(--line-strong)' }}
+                        >
+                          <div
+                            className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform"
+                            style={{ transform: settings.showTimestamps ? 'translateX(22px)' : 'translateX(2px)' }}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: 'var(--text)' }}>Streaming Responses</div>
+                          <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>Show responses as they're generated</div>
+                        </div>
+                        <button
+                          onClick={() => setSettings({ ...settings, streamingEnabled: !settings.streamingEnabled })}
+                          className="relative w-11 h-6 rounded-full transition-colors"
+                          style={{ background: settings.streamingEnabled ? 'var(--accent)' : 'var(--line-strong)' }}
+                        >
+                          <div
+                            className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform"
+                            style={{ transform: settings.streamingEnabled ? 'translateX(22px)' : 'translateX(2px)' }}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div>
+                          <div className="font-medium text-sm" style={{ color: 'var(--text)' }}>Compact Mode</div>
+                          <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>Reduce spacing between messages</div>
+                        </div>
+                        <button
+                          onClick={() => setSettings({ ...settings, compactMode: !settings.compactMode })}
+                          className="relative w-11 h-6 rounded-full transition-colors"
+                          style={{ background: settings.compactMode ? 'var(--accent)' : 'var(--line-strong)' }}
+                        >
+                          <div
+                            className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform"
+                            style={{ transform: settings.compactMode ? 'translateX(22px)' : 'translateX(2px)' }}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Data Tab */}
+                {settingsTab === 'data' && (
+                  <div className="animate-fade-in">
+                    <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text)' }}>Data & Privacy</h2>
+                    <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>Manage your data and privacy settings</p>
+
+                    <div className="space-y-4">
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div className="font-medium text-sm mb-1" style={{ color: 'var(--text)' }}>Export All Data</div>
+                        <div className="text-xs mb-3" style={{ color: 'var(--muted)' }}>Download all your conversations as a JSON file</div>
+                        <button
+                          onClick={() => {
+                            const data = JSON.stringify({ conversations: savedConversations, settings }, null, 2);
+                            const blob = new Blob([data], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `claude-data-${Date.now()}.json`;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                            showToast('Data exported');
+                          }}
+                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                          style={{ background: 'var(--accent)', color: 'white' }}
+                        >
+                          Export Data
+                        </button>
+                      </div>
+
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div className="font-medium text-sm mb-1" style={{ color: 'var(--text)' }}>Clear All Conversations</div>
+                        <div className="text-xs mb-3" style={{ color: 'var(--muted)' }}>Permanently delete all chat history</div>
+                        <button
+                          onClick={() => {
+                            if (confirm('Are you sure? This cannot be undone.')) {
+                              setSavedConversations([]);
+                              resetChat();
+                              showToast('All conversations cleared');
+                            }
+                          }}
+                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                          style={{ background: '#ef4444', color: 'white' }}
+                        >
+                          Clear All
+                        </button>
+                      </div>
+
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div className="font-medium text-sm mb-1" style={{ color: 'var(--text)' }}>Reset Settings</div>
+                        <div className="text-xs mb-3" style={{ color: 'var(--muted)' }}>Restore all settings to default values</div>
+                        <button
+                          onClick={() => {
+                            setSettings({
+                              name: 'You',
+                              email: '',
+                              bio: '',
+                              fontSize: 'medium',
+                              sendOnEnter: true,
+                              showTimestamps: true,
+                              streamingEnabled: true,
+                              compactMode: false,
+                              accentColor: 'amber',
+                            });
+                            showToast('Settings reset');
+                          }}
+                          className="px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                          style={{ background: 'var(--line-strong)', color: 'var(--text)' }}
+                        >
+                          Reset Settings
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* About Tab */}
+                {settingsTab === 'about' && (
+                  <div className="animate-fade-in">
+                    <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text)' }}>About</h2>
+                    <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>Information about Claude AI Assistant</p>
+
+                    <div className="space-y-6">
+                      <div className="p-6 rounded-xl text-center" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-2xl text-white animate-breathe" style={{ background: 'var(--accent-gradient)' }}>
+                          ✦
+                        </div>
+                        <div className="text-xl font-bold mb-1" style={{ color: 'var(--text)' }}>Claude AI Assistant</div>
+                        <div className="text-sm" style={{ color: 'var(--muted)' }}>Version 2.0.0</div>
+                      </div>
+
+                      <div className="p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                        <div className="font-medium text-sm mb-3" style={{ color: 'var(--text)' }}>Keyboard Shortcuts</div>
+                        <div className="space-y-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          <div className="flex justify-between"><span>New chat</span><kbd className="px-2 py-0.5 rounded" style={{ background: 'var(--line)' }}>⌘K</kbd></div>
+                          <div className="flex justify-between"><span>Focus input</span><kbd className="px-2 py-0.5 rounded" style={{ background: 'var(--line)' }}>⌘/</kbd></div>
+                          <div className="flex justify-between"><span>Open settings</span><kbd className="px-2 py-0.5 rounded" style={{ background: 'var(--line)' }}>⌘,</kbd></div>
+                          <div className="flex justify-between"><span>Close modal</span><kbd className="px-2 py-0.5 rounded" style={{ background: 'var(--line)' }}>Esc</kbd></div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-xl text-center text-xs" style={{ color: 'var(--muted)' }}>
+                        Made with ❤️ using React & Tailwind CSS
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* HTML Preview Modal */}
       {previewHtml && (
