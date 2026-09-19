@@ -8,7 +8,9 @@
   --muted: #77746e;
   --line: #dedbd3;
   --accent: #d97757;
+  --accent-hover: #c4663f;
   --shadow: 0 8px 30px #2c24140e;
+  --shadow-lg: 0 12px 40px #2c241418;
 }
 
 * { box-sizing: border-box; }
@@ -19,50 +21,119 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body.dark {
-  --bg: #1b1b1a;
-  --panel: #242423;
-  --sidebar: #151514;
+  --bg: #1a1a19;
+  --panel: #232321;
+  --sidebar: #141413;
   --text: #eeece6;
   --muted: #aaa79f;
-  --line: #3a3935;
+  --line: #33322e;
+  --accent: #e08a6a;
+  --accent-hover: #d97757;
   --shadow: 0 8px 30px #0003;
+  --shadow-lg: 0 12px 40px #0005;
 }
 
-/* Typing animation */
+/* Animations */
 @keyframes typingPulse {
   0%, 60%, 100% { opacity: .3; transform: translateY(0); }
   30% { opacity: 1; transform: translateY(-3px); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .typing-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--muted);
+  background: var(--accent);
   animation: typingPulse 1.1s infinite ease-in-out;
 }
 
 .typing-dot:nth-child(2) { animation-delay: .15s; }
 .typing-dot:nth-child(3) { animation-delay: .3s; }
 
-/* Toast animation */
-.toast-enter {
-  opacity: 0;
-  transform: translate(-50%, 20px);
+.msg-animate-in {
+  animation: fadeInUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.toast-show {
-  opacity: 1;
-  transform: translate(-50%, 0);
-  transition: .2s;
+.msg-animate-left {
+  animation: slideInLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Scrollbar styling */
+.msg-animate-right {
+  animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.float-anim {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Streaming cursor */
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--accent);
+  margin-left: 2px;
+  animation: typingPulse 0.8s infinite;
+  vertical-align: text-bottom;
+}
+
+/* Scrollbar */
 .conversation-list::-webkit-scrollbar {
   width: 4px;
+}
+
+.conversation-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .conversation-list::-webkit-scrollbar-thumb {
@@ -70,12 +141,79 @@ body.dark {
   border-radius: 2px;
 }
 
-/* Textarea reset */
-textarea {
-  font-family: inherit;
+.conversation-list::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
 
-/* Dark mode overrides for code */
+/* Selection */
+::selection {
+  background: var(--accent);
+  color: white;
+}
+
+/* Focus visible */
+button:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Code blocks */
+.code-block {
+  position: relative;
+}
+
+.code-block .copy-code-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.code-block:hover .copy-code-btn {
+  opacity: 1;
+}
+
+/* Message hover actions */
+.msg-actions {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.message-row:hover .msg-actions {
+  opacity: 1;
+}
+
+/* Gradient text for welcome */
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent), #e8a87c, var(--accent));
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 4s ease infinite;
+}
+
+/* Glass effect */
+.glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Smooth theme transition */
+body, body * {
+  transition-property: background-color, border-color;
+  transition-duration: 0.2s;
+  transition-timing-function: ease;
+}
+
+textarea, .no-theme-transition, .no-theme-transition * {
+  transition: none !important;
+}
+
+/* Dark mode code */
 body.dark .bubble code {
   background: rgba(255, 255, 255, .1);
 }
@@ -84,8 +222,17 @@ body.dark .bubble pre {
   background: rgba(255, 255, 255, .08);
 }
 
-/* Selection color */
-::selection {
-  background: var(--accent);
-  color: white;
+/* Status dot pulse */
+.status-pulse {
+  position: relative;
+}
+
+.status-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: #61a878;
+  animation: pulse-ring 2s ease-out infinite;
+  opacity: 0;
 }
