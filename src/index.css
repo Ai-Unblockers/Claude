@@ -462,13 +462,64 @@ body.dark .inline-code {
 }
 
 /* ===== CODE BLOCKS ===== */
-.code-block pre {
+.code-block {
   margin: 12px 0;
-  padding: 16px 18px;
   border-radius: 12px;
-  overflow-x: auto;
-  background: var(--bg-elevated);
+  overflow: hidden;
   border: 1px solid var(--line);
+  background: var(--bg-elevated);
+}
+
+.code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.code-lang {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+}
+
+.code-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.code-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.code-action-btn:hover {
+  background: var(--panel);
+  color: var(--accent);
+}
+
+.code-action-btn svg {
+  flex-shrink: 0;
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 16px 18px;
+  overflow-x: auto;
   font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
   font-size: 12.5px;
   line-height: 1.6;
@@ -478,6 +529,20 @@ body.dark .inline-code {
 .code-block code {
   font-family: inherit;
   font-size: inherit;
+}
+
+/* HTML block special styling */
+.html-block {
+  border-color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+}
+
+.html-block .code-header {
+  background: var(--accent-glow);
+}
+
+.html-block .code-lang {
+  color: var(--accent);
 }
 
 /* ===== LIST ITEMS ===== */

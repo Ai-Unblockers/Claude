@@ -27,9 +27,24 @@ function escapeHtml(value: string): string {
   );
 }
 
+// Store HTML content for code blocks (avoids data attribute escaping issues)
+const htmlCodeStore: Record<string, string> = {};
+
 function formatMessage(text: string): string {
-  return escapeHtml(text)
-    .replace(/```([\s\S]*?)```/g, '<div class="code-block"><pre><code>$1</code></pre></div>')
+  // First, extract code blocks before escaping
+  const codeBlocks: Array<{ placeholder: string; lang: string; code: string }> = [];
+  let processedText = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+    const id = `cb-${Math.random().toString(36).slice(2, 11)}`;
+    const language = lang || 'code';
+    codeBlocks.push({ placeholder: id, lang: language, code: code.trim() });
+    return `\n\u0000${id}\u0000\n`;
+  });
+  
+  // Now escape the rest
+  processedText = escapeHtml(processedText);
+  
+  // Apply formatting
+  processedText = processedText
     .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
@@ -37,6 +52,52 @@ function formatMessage(text: string): string {
     .replace(/^(\d+)\. (.+)/gm, '<span class="list-item">$1. $2</span>')
     .replace(/^---$/gm, '<hr class="my-3 opacity-20" />')
     .replace(/\n/g, '<br>');
+  
+  // Replace code block placeholders with rendered code blocks
+  codeBlocks.forEach(({ placeholder, lang, code }) => {
+    const escapedCode = escapeHtml(code);
+    const isHtml = lang.toLowerCase() === 'html';
+    
+    // Store HTML content for preview/download
+    if (isHtml) {
+      htmlCodeStore[placeholder] = code;
+    }
+    
+    let actionsHtml = '';
+    if (isHtml) {
+      actionsHtml = `
+        <button class="code-action-btn" data-action="preview" data-store-id="${placeholder}" title="Preview">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+        <button class="code-action-btn" data-action="download" data-store-id="${placeholder}" title="Download">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+        <button class="code-action-btn" data-action="copy" data-store-id="${placeholder}" title="Copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy
+        </button>`;
+    } else {
+      actionsHtml = `
+        <button class="code-action-btn" data-action="copy-code" data-code="${escapeHtml(code)}" title="Copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Copy
+        </button>`;
+    }
+    
+    const blockHtml = `<div class="code-block ${isHtml ? 'html-block' : ''}">
+      <div class="code-header">
+        <span class="code-lang">${lang.toUpperCase() || 'CODE'}</span>
+        <div class="code-actions">${actionsHtml}</div>
+      </div>
+      <pre><code>${escapedCode}</code></pre>
+    </div>`;
+    
+    processedText = processedText.replace(`\u0000${placeholder}\u0000`, blockHtml);
+  });
+  
+  return processedText;
 }
 
 function replyTo(text: string, previous?: string): string {
@@ -94,6 +155,25 @@ function replyTo(text: string, previous?: string): string {
   if (/\b(computer science|coding|javascript|python|html|css|programming|algorithm|code)\b/.test(lower)) {
     return "I can help debug code, explain programming concepts, or design an algorithm.\n\nShare:\n- The **code** you have\n- The **expected result**\n- What **actually happens**\n\nI\u2019ll explain the fix so you can understand it, not just copy it.\n\n```javascript\n// Example: I can help with code like this\nfunction fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}\n```";
   }
+  
+  // HTML generation requests
+  if (/\b(generate|create|make|build|design)\b.*\b(html|page|website|landing|template)\b/i.test(lower)) {
+    return "I'll create an HTML page for you! Here's a modern, responsive template:\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Generated Page</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      color: white;\n    }\n    .container {\n      text-align: center;\n      padding: 2rem;\n      max-width: 600px;\n    }\n    h1 {\n      font-size: 3rem;\n      margin-bottom: 1rem;\n      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);\n    }\n    p {\n      font-size: 1.25rem;\n      opacity: 0.9;\n      margin-bottom: 2rem;\n    }\n    .btn {\n      display: inline-block;\n      padding: 1rem 2rem;\n      background: white;\n      color: #667eea;\n      text-decoration: none;\n      border-radius: 50px;\n      font-weight: 600;\n      transition: transform 0.2s;\n    }\n    .btn:hover {\n      transform: translateY(-2px);\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <h1>Welcome!</h1>\n    <p>This is a generated HTML page with modern styling.</p>\n    <a href=\"#\" class=\"btn\">Get Started</a>\n  </div>\n</body>\n</html>\n```\n\nYou can **Preview** this to see it rendered, **Download** it as an HTML file, or **Copy** the code.";
+  }
+  
+  if (/\b(button|form|card|component|widget)\b.*\b(html|css)\b/i.test(lower) || /\b(html|css)\b.*\b(button|form|card|component|widget)\b/i.test(lower)) {
+    return "Here's a modern card component with HTML and CSS:\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Card Component</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n      background: #f5f5f5;\n      min-height: 100vh;\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      padding: 2rem;\n    }\n    .card {\n      background: white;\n      border-radius: 16px;\n      overflow: hidden;\n      box-shadow: 0 10px 40px rgba(0,0,0,0.1);\n      max-width: 400px;\n      transition: transform 0.3s;\n    }\n    .card:hover {\n      transform: translateY(-8px);\n    }\n    .card-image {\n      width: 100%;\n      height: 200px;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      font-size: 4rem;\n    }\n    .card-content {\n      padding: 1.5rem;\n    }\n    .card-title {\n      font-size: 1.5rem;\n      font-weight: 600;\n      margin-bottom: 0.5rem;\n      color: #1a1a1a;\n    }\n    .card-text {\n      color: #666;\n      line-height: 1.6;\n      margin-bottom: 1.5rem;\n    }\n    .card-btn {\n      display: inline-block;\n      padding: 0.75rem 1.5rem;\n      background: #667eea;\n      color: white;\n      text-decoration: none;\n      border-radius: 8px;\n      font-weight: 500;\n      transition: background 0.2s;\n    }\n    .card-btn:hover {\n      background: #5568d3;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"card\">\n    <div class=\"card-image\">🎨</div>\n    <div class=\"card-content\">\n      <h2 class=\"card-title\">Beautiful Card</h2>\n      <p class=\"card-text\">This is a modern card component with smooth hover effects and clean design.</p>\n      <a href=\"#\" class=\"card-btn\">Learn More</a>\n    </div>\n  </div>\n</body>\n</html>\n```\n\nClick **Preview** to see it in action!";
+  }
+  
+  // Dashboard/analytics HTML
+  if (/\b(dashboard|analytics|chart|graph|stats|metrics)\b.*\b(html|page|web)\b/i.test(lower)) {
+    return "Here's a modern dashboard layout:\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Dashboard</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n      background: #0f172a;\n      color: white;\n      min-height: 100vh;\n      padding: 2rem;\n    }\n    .header {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      margin-bottom: 2rem;\n    }\n    .header h1 { font-size: 1.75rem; font-weight: 700; }\n    .stats-grid {\n      display: grid;\n      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));\n      gap: 1.5rem;\n      margin-bottom: 2rem;\n    }\n    .stat-card {\n      background: #1e293b;\n      border-radius: 16px;\n      padding: 1.5rem;\n      border: 1px solid #334155;\n    }\n    .stat-label { font-size: 0.875rem; color: #94a3b8; margin-bottom: 0.5rem; }\n    .stat-value { font-size: 2rem; font-weight: 700; }\n    .stat-change { font-size: 0.75rem; color: #4ade80; margin-top: 0.25rem; }\n    .chart-area {\n      background: #1e293b;\n      border-radius: 16px;\n      padding: 1.5rem;\n      border: 1px solid #334155;\n      height: 300px;\n      display: flex;\n      align-items: flex-end;\n      gap: 8px;\n    }\n    .bar {\n      flex: 1;\n      background: linear-gradient(to top, #6366f1, #8b5cf6);\n      border-radius: 8px 8px 0 0;\n      min-height: 20px;\n      transition: height 0.3s;\n    }\n  </style>\n</head>\n<body>\n  <div class=\"header\">\n    <h1>Dashboard</h1>\n    <span style=\"color: #94a3b8;\">Last 7 days</span>\n  </div>\n  <div class=\"stats-grid\">\n    <div class=\"stat-card\">\n      <div class=\"stat-label\">Total Revenue</div>\n      <div class=\"stat-value\">$45,231</div>\n      <div class=\"stat-change\">↑ 20.1% from last month</div>\n    </div>\n    <div class=\"stat-card\">\n      <div class=\"stat-label\">Subscriptions</div>\n      <div class=\"stat-value\">+2,350</div>\n      <div class=\"stat-change\">↑ 180.1% from last month</div>\n    </div>\n    <div class=\"stat-card\">\n      <div class=\"stat-label\">Active Users</div>\n      <div class=\"stat-value\">12,234</div>\n      <div class=\"stat-change\">↑ 19% from last month</div>\n    </div>\n  </div>\n  <div class=\"chart-area\">\n    <div class=\"bar\" style=\"height: 40%\"></div>\n    <div class=\"bar\" style=\"height: 65%\"></div>\n    <div class=\"bar\" style=\"height: 45%\"></div>\n    <div class=\"bar\" style=\"height: 80%\"></div>\n    <div class=\"bar\" style=\"height: 55%\"></div>\n    <div class=\"bar\" style=\"height: 90%\"></div>\n    <div class=\"bar\" style=\"height: 70%\"></div>\n  </div>\n</body>\n</html>\n```\n\nClick **Preview** to see the dashboard!";
+  }
+  
+  // Generic HTML generation for any page request
+  if (/\b(html|page|website|site)\b/i.test(lower) && /\b(make|create|generate|build|design|show|give)\b/i.test(lower)) {
+    return "I'll generate an HTML page for you! Here's a clean, modern design:\n\n```html\n<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>My Page</title>\n  <style>\n    * { margin: 0; padding: 0; box-sizing: border-box; }\n    body {\n      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;\n      background: #fafafa;\n      color: #1a1a1a;\n    }\n    nav {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      padding: 1.5rem 3rem;\n      background: white;\n      border-bottom: 1px solid #eee;\n    }\n    .logo { font-size: 1.25rem; font-weight: 700; }\n    .nav-links { display: flex; gap: 2rem; }\n    .nav-links a { text-decoration: none; color: #666; font-size: 0.9rem; }\n    .hero {\n      text-align: center;\n      padding: 6rem 2rem;\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      color: white;\n    }\n    .hero h1 { font-size: 3rem; margin-bottom: 1rem; }\n    .hero p { font-size: 1.25rem; opacity: 0.9; max-width: 600px; margin: 0 auto 2rem; }\n    .cta-btn {\n      display: inline-block;\n      padding: 1rem 2.5rem;\n      background: white;\n      color: #667eea;\n      text-decoration: none;\n      border-radius: 50px;\n      font-weight: 600;\n      font-size: 1rem;\n      transition: transform 0.2s;\n    }\n    .cta-btn:hover { transform: scale(1.05); }\n    .features {\n      display: grid;\n      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));\n      gap: 2rem;\n      padding: 4rem 3rem;\n      max-width: 1200px;\n      margin: 0 auto;\n    }\n    .feature {\n      text-align: center;\n      padding: 2rem;\n    }\n    .feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }\n    .feature h3 { margin-bottom: 0.5rem; }\n    .feature p { color: #666; line-height: 1.6; }\n  </style>\n</head>\n<body>\n  <nav>\n    <div class=\"logo\">MyBrand</div>\n    <div class=\"nav-links\">\n      <a href=\"#\">Features</a>\n      <a href=\"#\">Pricing</a>\n      <a href=\"#\">About</a>\n    </div>\n  </nav>\n  <section class=\"hero\">\n    <h1>Build Something Amazing</h1>\n    <p>Create beautiful websites and applications with modern tools and best practices.</p>\n    <a href=\"#\" class=\"cta-btn\">Get Started</a>\n  </section>\n  <section class=\"features\">\n    <div class=\"feature\">\n      <div class=\"feature-icon\">⚡</div>\n      <h3>Lightning Fast</h3>\n      <p>Optimized for speed and performance out of the box.</p>\n    </div>\n    <div class=\"feature\">\n      <div class=\"feature-icon\">🎨</div>\n      <h3>Beautiful Design</h3>\n      <p>Modern, clean aesthetics that look great on any device.</p>\n    </div>\n    <div class=\"feature\">\n      <div class=\"feature-icon\">🔒</div>\n      <h3>Secure</h3>\n      <p>Built with security best practices from the ground up.</p>\n    </div>\n  </section>\n</body>\n</html>\n```\n\nYou can **Preview**, **Download**, or **Copy** this HTML!";
+  }
   if (/\b(weather|forecast|temperature)\b/.test(lower)) return "I can\u2019t access live weather data in this demo. But tell me the city and date, and I can help you interpret a forecast you paste here or plan what to pack.";
   if (/\b(recipe|cook|cooking|dinner|lunch|breakfast)\b/.test(lower)) return "I can help with that! Tell me:\n\n- Your **ingredients**\n- **Dietary needs**\n- Available **time**\n- How many **people** you\u2019re serving\n\nAnd I\u2019ll suggest a practical recipe.";
   if (/\b(travel|trip|vacation|hotel|flight|itinerary)\b/.test(lower)) return "I can help plan a trip! Share:\n\n- **Destination**\n- **Dates**\n- **Budget**\n- **Interests**\n- Preferred **pace** (relaxed vs packed)\n\nAnd I\u2019ll build you an itinerary.";
@@ -127,12 +207,15 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const [previewTitle, setPreviewTitle] = useState('HTML Preview');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toastTimeout = useRef<ReturnType<typeof setTimeout>>();
   const streamInterval = useRef<ReturnType<typeof setInterval>>();
+  const previewIframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     document.body.classList.toggle('dark', darkMode);
@@ -181,6 +264,61 @@ export default function App() {
       setTimeout(() => setCopiedId(null), 2000);
     });
   }, [showToast]);
+
+  const handleCodeAction = useCallback((action: string, storeId?: string, code?: string) => {
+    const htmlContent = storeId ? htmlCodeStore[storeId] : code;
+    
+    if (!htmlContent) return;
+    
+    if (action === 'copy' || action === 'copy-code') {
+      navigator.clipboard.writeText(htmlContent).then(() => {
+        showToast('Code copied to clipboard');
+      });
+    } else if (action === 'download') {
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `generated-${Date.now()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('HTML file downloaded');
+    } else if (action === 'preview') {
+      setPreviewHtml(htmlContent);
+      setPreviewTitle(`HTML Preview - ${new Date().toLocaleTimeString()}`);
+    }
+  }, [showToast]);
+
+  // Handle code block button clicks
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const button = target.closest('.code-action-btn') as HTMLElement;
+      if (button) {
+        const action = button.dataset.action;
+        const storeId = button.dataset.storeId;
+        const code = button.dataset.code;
+        if (action) {
+          handleCodeAction(action, storeId, code);
+        }
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, [handleCodeAction]);
+  
+  // Close preview on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && previewHtml) {
+        setPreviewHtml(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewHtml]);
 
   const streamResponse = useCallback((fullText: string, newMessages: ChatMessage[], newIndex: number) => {
     setIsTyping(true);
@@ -524,9 +662,9 @@ export default function App() {
                 <div className="grid grid-cols-2 gap-3 w-full max-w-lg">
                   {[
                     { icon: '💡', label: 'Brainstorm', desc: 'Generate creative ideas', prompt: 'Help me brainstorm ideas for a project' },
+                    { icon: '🌐', label: 'Generate HTML', desc: 'Create web pages & components', prompt: 'Generate an HTML landing page' },
                     { icon: '🧠', label: 'Explain', desc: 'Break down complex topics', prompt: 'Explain quantum computing simply' },
                     { icon: '✍️', label: 'Write', desc: 'Draft emails & documents', prompt: 'Help me write an email' },
-                    { icon: '📝', label: 'Summarize', desc: 'Condense long content', prompt: 'Summarize a long article for me' },
                   ].map((item, i) => (
                     <button
                       key={i}
@@ -733,6 +871,94 @@ export default function App() {
           {toast}
         </div>
       </div>
+
+      {/* HTML Preview Modal */}
+      {previewHtml && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-6xl h-[90vh] flex flex-col rounded-2xl overflow-hidden animate-scale-in" style={{ background: 'var(--panel)', boxShadow: 'var(--shadow-xl)' }}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-3 flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--line)' }}>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#ff5f57' }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#febc2e' }} />
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#28c840' }} />
+                </div>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{previewTitle}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    const w = window.open('', '_blank');
+                    if (w) {
+                      w.document.write(previewHtml);
+                      w.document.close();
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                  Open in new tab
+                </button>
+                <button
+                  onClick={() => {
+                    const blob = new Blob([previewHtml], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `preview-${Date.now()}.html`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast('Downloaded');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(previewHtml);
+                    showToast('Copied');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Copy
+                </button>
+                <button
+                  onClick={() => setPreviewHtml(null)}
+                  className="p-1.5 rounded-lg transition-all"
+                  style={{ color: 'var(--muted)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--line)'; e.currentTarget.style.color = 'var(--text)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted)'; }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </div>
+            {/* Preview iframe */}
+            <div className="flex-1 relative" style={{ background: 'white' }}>
+              <iframe
+                ref={previewIframeRef}
+                srcDoc={previewHtml}
+                className="absolute inset-0 w-full h-full border-0"
+                title="HTML Preview"
+                sandbox="allow-scripts"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile overlay */}
       {sidebarOpen && (
