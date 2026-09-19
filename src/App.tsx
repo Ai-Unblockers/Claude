@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import LiquidGlass from './components/LiquidGlass';
+import { ClaudeLogo, SonnetLogo, OpusLogo, HaikuLogo } from './components/Logos';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -487,35 +489,40 @@ export default function App() {
         className={`fixed top-0 left-0 h-screen flex flex-col z-30 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } lg:translate-x-0`}
-        style={{ width: 290, background: 'var(--sidebar)', borderRight: '1px solid var(--line)' }}
+        style={{ width: 290 }}
       >
-        <div className="glass absolute inset-0" style={{ zIndex: -1 }} />
+        <LiquidGlass className="absolute inset-0" intensity="strong" />
 
         {/* Brand */}
-        <div className="flex items-center gap-3 px-5 pt-6 pb-6">
+        <div className="flex items-center gap-3 px-5 pt-6 pb-6 relative z-10">
           <div className="relative">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base font-bold animate-breathe" style={{ background: 'var(--accent-gradient)' }}>
-              ✦
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center animate-breathe" style={{ background: 'var(--accent-gradient)', color: 'white' }}>
+              <ClaudeLogo size={22} />
             </div>
-            <div className="absolute inset-0 rounded-xl animate-breathe" style={{ background: 'var(--accent-gradient)', filter: 'blur(8px)', opacity: 0.4 }} />
+            <div className="absolute inset-0 rounded-xl animate-breathe" style={{ background: 'var(--accent-gradient)', filter: 'blur(12px)', opacity: 0.5 }} />
           </div>
           <div>
-            <div className="text-lg font-bold tracking-tight" style={{ color: 'var(--text)' }}>Claude</div>
-            <div className="text-[10px] font-medium tracking-wide uppercase" style={{ color: 'var(--muted)' }}>AI Assistant</div>
+            <div className="text-lg font-bold tracking-tight flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+              Claude
+              <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>PRO</span>
+            </div>
+            <div className="text-[10px] font-medium tracking-wide uppercase" style={{ color: 'var(--muted)' }}>by Anthropic</div>
           </div>
         </div>
 
         {/* New Chat */}
         <div className="px-3 pb-2">
-          <button
-            onClick={() => { resetChat(); }}
-            className="btn-premium flex items-center gap-2.5 w-full px-4 py-3 rounded-xl text-left text-sm font-semibold"
-            style={{ background: 'var(--accent-gradient)', color: 'white', boxShadow: 'var(--shadow)' }}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-            New chat
-            <span className="ml-auto text-xs opacity-60 hidden lg:inline">⌘K</span>
-          </button>
+          <LiquidGlass variant="button" className="rounded-xl overflow-hidden" shine>
+            <button
+              onClick={() => { resetChat(); }}
+              className="btn-premium flex items-center gap-2.5 w-full px-4 py-3 text-left text-sm font-semibold"
+              style={{ background: 'var(--accent-gradient)', color: 'white' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              New chat
+              <span className="ml-auto text-xs opacity-60 hidden lg:inline">⌘K</span>
+            </button>
+          </LiquidGlass>
         </div>
 
         {/* Search */}
@@ -630,9 +637,11 @@ export default function App() {
       {/* Main */}
       <main className="h-screen lg:ml-[290px] flex flex-col relative z-10">
         {/* Topbar */}
-        <header className="h-14 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 glass" style={{ borderBottom: '1px solid var(--line)' }}>
+        <header className="h-14 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 relative">
+          <LiquidGlass className="absolute inset-0 rounded-none" intensity="medium" />
+          
           <button
-            className="lg:hidden p-2 rounded-xl transition-colors"
+            className="lg:hidden p-2 rounded-xl transition-colors relative z-10"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'var(--line)')}
@@ -642,24 +651,29 @@ export default function App() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
           </button>
 
-          <div className="flex items-center gap-2 mx-auto">
+          <div className="flex items-center gap-2 mx-auto relative z-10">
             <div className="relative">
               <span className="status-online w-2 h-2 rounded-full block" style={{ background: '#4ade80' }} />
             </div>
-            <select
-              value={model}
-              onChange={e => {
-                setModel(e.target.value);
-                showToast(`${e.target.options[e.target.selectedIndex].text} selected`);
-              }}
-              className="appearance-none border-0 outline-0 px-2 py-1 bg-transparent cursor-pointer font-semibold text-sm"
-              style={{ color: 'var(--text)' }}
-              aria-label="Choose Claude model"
-            >
-              <option value="claude-sonnet" style={{ background: 'var(--panel)' }}>Claude Sonnet</option>
-              <option value="claude-opus" style={{ background: 'var(--panel)' }}>Claude Opus</option>
-              <option value="claude-haiku" style={{ background: 'var(--panel)' }}>Claude Haiku</option>
-            </select>
+            <div className="flex items-center gap-2">
+              {model === 'claude-sonnet' && <SonnetLogo size={18} className="text-blue-500" />}
+              {model === 'claude-opus' && <OpusLogo size={18} className="text-purple-500" />}
+              {model === 'claude-haiku' && <HaikuLogo size={18} className="text-green-500" />}
+              <select
+                value={model}
+                onChange={e => {
+                  setModel(e.target.value);
+                  showToast(`${e.target.options[e.target.selectedIndex].text} selected`);
+                }}
+                className="appearance-none border-0 outline-0 px-2 py-1 bg-transparent cursor-pointer font-semibold text-sm"
+                style={{ color: 'var(--text)' }}
+                aria-label="Choose Claude model"
+              >
+                <option value="claude-sonnet" style={{ background: 'var(--panel)' }}>Claude Sonnet</option>
+                <option value="claude-opus" style={{ background: 'var(--panel)' }}>Claude Opus</option>
+                <option value="claude-haiku" style={{ background: 'var(--panel)' }}>Claude Haiku</option>
+              </select>
+            </div>
             <svg className="opacity-40" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
           </div>
 
@@ -695,10 +709,10 @@ export default function App() {
               <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in-up">
                 {/* Animated Logo */}
                 <div className="relative mb-8">
-                  <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-white text-3xl animate-float" style={{ background: 'var(--accent-gradient)', boxShadow: '0 20px 60px rgba(201, 106, 58, 0.3)' }}>
-                    ✦
+                  <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-white animate-float" style={{ background: 'var(--accent-gradient)', boxShadow: '0 20px 60px rgba(201, 106, 58, 0.4)' }}>
+                    <ClaudeLogo size={40} />
                   </div>
-                  <div className="absolute inset-0 rounded-3xl animate-float" style={{ background: 'var(--accent-gradient)', filter: 'blur(24px)', opacity: 0.3, animationDelay: '0.5s' }} />
+                  <div className="absolute inset-0 rounded-3xl animate-float" style={{ background: 'var(--accent-gradient)', filter: 'blur(24px)', opacity: 0.4, animationDelay: '0.5s' }} />
                   <div className="absolute -inset-4 rounded-full animate-spin-slow" style={{ border: '1px dashed var(--line-strong)', opacity: 0.5 }} />
                 </div>
 
@@ -717,16 +731,21 @@ export default function App() {
                     { icon: '🧠', label: 'Explain', desc: 'Break down complex topics', prompt: 'Explain quantum computing simply' },
                     { icon: '✍️', label: 'Write', desc: 'Draft emails & documents', prompt: 'Help me write an email' },
                   ].map((item, i) => (
-                    <button
+                    <LiquidGlass
                       key={i}
-                      onClick={() => { setPrompt(item.prompt); textareaRef.current?.focus(); }}
-                      className="suggestion-card flex flex-col items-start gap-1.5 p-4 rounded-2xl text-left border"
-                      style={{ background: 'var(--panel)', borderColor: 'var(--line)', boxShadow: 'var(--shadow-sm)' }}
+                      variant="button"
+                      className="suggestion-card flex flex-col items-start gap-1.5 p-4 rounded-2xl text-left cursor-pointer"
+                      shine
                     >
-                      <span className="text-xl">{item.icon}</span>
-                      <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{item.label}</span>
-                      <span className="text-xs" style={{ color: 'var(--muted)' }}>{item.desc}</span>
-                    </button>
+                      <button
+                        onClick={() => { setPrompt(item.prompt); textareaRef.current?.focus(); }}
+                        className="w-full text-left"
+                      >
+                        <span className="text-xl">{item.icon}</span>
+                        <div className="text-sm font-semibold mt-1" style={{ color: 'var(--text)' }}>{item.label}</div>
+                        <div className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{item.desc}</div>
+                      </button>
+                    </LiquidGlass>
                   ))}
                 </div>
 
@@ -751,8 +770,8 @@ export default function App() {
                 style={{ animationDelay: `${Math.min(i * 0.03, 0.3)}s`, animationFillMode: 'both' }}
               >
                 {msg.role === 'assistant' && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.2)' }}>
-                    ✦
+                  <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.3)' }}>
+                    <ClaudeLogo size={16} />
                   </div>
                 )}
                 <div className={`relative group ${msg.role === 'user' ? 'max-w-[75%]' : 'max-w-[85%]'}`}>
@@ -795,8 +814,8 @@ export default function App() {
             {/* Streaming */}
             {streamingText && (
               <div className="flex gap-3.5 py-4 animate-slide-left">
-                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.2)' }}>
-                  ✦
+                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.3)' }}>
+                  <ClaudeLogo size={16} />
                 </div>
                 <div className="max-w-[85%]">
                   <div className="rounded-2xl px-4 py-3.5 text-sm leading-relaxed" style={{ background: 'var(--panel)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-sm)' }}>
@@ -810,8 +829,8 @@ export default function App() {
             {/* Typing */}
             {isTyping && !streamingText && (
               <div className="flex gap-3.5 py-4 animate-slide-left">
-                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.2)' }}>
-                  ✦
+                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.3)' }}>
+                  <ClaudeLogo size={16} />
                 </div>
                 <div className="flex items-center gap-2 px-4 py-3.5 rounded-2xl" style={{ background: 'var(--panel)', border: '1px solid var(--line)' }}>
                   <span className="typing-dot" />
@@ -828,7 +847,7 @@ export default function App() {
         {/* Composer */}
         <div className="flex-shrink-0 px-4 lg:px-6 pb-4 pt-2">
           <form onSubmit={handleSubmit} className="max-w-[800px] mx-auto">
-            <div className="composer-glow rounded-2xl" style={{ background: 'var(--panel)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-lg)', borderRadius: 'var(--radius-lg)' }}>
+            <LiquidGlass variant="card" className="rounded-2xl" intensity="strong">
               <div className="p-4 pb-2">
                 <textarea
                   ref={textareaRef}
@@ -899,36 +918,35 @@ export default function App() {
                   </button>
                 </div>
               </div>
-            </div>
+            </LiquidGlass>
           </form>
         </div>
       </main>
 
       {/* Toast */}
       <div
-        className={`fixed left-1/2 bottom-8 z-50 px-5 py-3 rounded-2xl text-xs font-semibold pointer-events-none transition-all duration-400 ${
+        className={`fixed left-1/2 bottom-8 z-50 pointer-events-none transition-all duration-400 ${
           toast ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95'
         }`}
         style={{
           transform: `translateX(-50%) ${toast ? 'translateY(0) scale(1)' : 'translateY(16px) scale(0.95)'}`,
-          background: 'var(--text)',
-          color: 'var(--bg)',
-          boxShadow: 'var(--shadow-xl)'
         }}
         role="status"
       >
-        <div className="flex items-center gap-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-          {toast}
-        </div>
+        <LiquidGlass variant="button" className="px-5 py-3 rounded-2xl" intensity="strong">
+          <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--text)' }}>
+            <ClaudeLogo size={14} />
+            {toast}
+          </div>
+        </LiquidGlass>
       </div>
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-4xl h-[85vh] flex rounded-2xl overflow-hidden animate-scale-in" style={{ background: 'var(--panel)', boxShadow: 'var(--shadow-xl)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
+          <LiquidGlass variant="card" className="w-full max-w-4xl h-[85vh] flex rounded-2xl overflow-hidden animate-scale-in">
             {/* Sidebar */}
-            <div className="w-56 flex-shrink-0 flex flex-col p-4" style={{ background: 'var(--bg-elevated)', borderRight: '1px solid var(--line)' }}>
+            <div className="w-56 flex-shrink-0 flex flex-col p-4 relative" style={{ background: 'var(--bg-elevated)', borderRight: '1px solid var(--line)' }}>
               <div className="flex items-center gap-2 mb-6 px-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
                 <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>Settings</span>
@@ -1279,15 +1297,49 @@ export default function App() {
                     <p className="text-sm mb-8" style={{ color: 'var(--muted)' }}>Information about Claude AI Assistant</p>
 
                     <div className="space-y-6">
-                      <div className="p-6 rounded-xl text-center" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center text-2xl text-white animate-breathe" style={{ background: 'var(--accent-gradient)' }}>
-                          ✦
+                      <LiquidGlass variant="card" className="p-6 rounded-xl text-center">
+                        <div className="relative inline-block mb-4">
+                          <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white animate-breathe" style={{ background: 'var(--accent-gradient)', boxShadow: '0 12px 40px rgba(201, 106, 58, 0.4)' }}>
+                            <ClaudeLogo size={32} />
+                          </div>
+                          <div className="absolute inset-0 rounded-2xl animate-breathe" style={{ background: 'var(--accent-gradient)', filter: 'blur(16px)', opacity: 0.4 }} />
                         </div>
-                        <div className="text-xl font-bold mb-1" style={{ color: 'var(--text)' }}>Claude AI Assistant</div>
-                        <div className="text-sm" style={{ color: 'var(--muted)' }}>Version 2.0.0</div>
-                      </div>
+                        <div className="text-xl font-bold mb-1 flex items-center justify-center gap-2" style={{ color: 'var(--text)' }}>
+                          Claude AI Assistant
+                          <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>PRO</span>
+                        </div>
+                        <div className="text-sm" style={{ color: 'var(--muted)' }}>Version 2.0.0 · by Anthropic</div>
+                        <div className="flex items-center justify-center gap-3 mt-4 pt-4" style={{ borderTop: '1px solid var(--line)' }}>
+                          <span className="text-xs" style={{ color: 'var(--muted)' }}>Powered by</span>
+                          <span className="text-sm font-semibold flex items-center gap-1" style={{ color: 'var(--text)' }}>
+                            <ClaudeLogo size={14} />
+                            Anthropic
+                          </span>
+                        </div>
+                      </LiquidGlass>
 
-                      <div className="p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--line)' }}>
+                      <LiquidGlass variant="card" className="p-4 rounded-xl">
+                        <div className="font-medium text-sm mb-3" style={{ color: 'var(--text)' }}>Available Models</div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="flex flex-col items-center gap-2 p-3 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
+                            <SonnetLogo size={24} className="text-blue-500" />
+                            <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>Sonnet</span>
+                            <span className="text-[10px]" style={{ color: 'var(--muted)' }}>Balanced</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-2 p-3 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
+                            <OpusLogo size={24} className="text-purple-500" />
+                            <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>Opus</span>
+                            <span className="text-[10px]" style={{ color: 'var(--muted)' }}>Powerful</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-2 p-3 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
+                            <HaikuLogo size={24} className="text-green-500" />
+                            <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>Haiku</span>
+                            <span className="text-[10px]" style={{ color: 'var(--muted)' }}>Fast</span>
+                          </div>
+                        </div>
+                      </LiquidGlass>
+
+                      <LiquidGlass variant="card" className="p-4 rounded-xl">
                         <div className="font-medium text-sm mb-3" style={{ color: 'var(--text)' }}>Keyboard Shortcuts</div>
                         <div className="space-y-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
                           <div className="flex justify-between"><span>New chat</span><kbd className="px-2 py-0.5 rounded" style={{ background: 'var(--line)' }}>⌘K</kbd></div>
@@ -1295,7 +1347,7 @@ export default function App() {
                           <div className="flex justify-between"><span>Open settings</span><kbd className="px-2 py-0.5 rounded" style={{ background: 'var(--line)' }}>⌘,</kbd></div>
                           <div className="flex justify-between"><span>Close modal</span><kbd className="px-2 py-0.5 rounded" style={{ background: 'var(--line)' }}>Esc</kbd></div>
                         </div>
-                      </div>
+                      </LiquidGlass>
 
                       <div className="p-4 rounded-xl text-center text-xs" style={{ color: 'var(--muted)' }}>
                         Made with ❤️ using React & Tailwind CSS
@@ -1305,14 +1357,14 @@ export default function App() {
                 )}
               </div>
             </div>
-          </div>
+          </LiquidGlass>
         </div>
       )}
 
       {/* HTML Preview Modal */}
       {previewHtml && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}>
-          <div className="w-full max-w-6xl h-[90vh] flex flex-col rounded-2xl overflow-hidden animate-scale-in" style={{ background: 'var(--panel)', boxShadow: 'var(--shadow-xl)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}>
+          <LiquidGlass variant="card" className="w-full max-w-6xl h-[90vh] flex flex-col rounded-2xl overflow-hidden animate-scale-in">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-3 flex-shrink-0" style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--line)' }}>
               <div className="flex items-center gap-3">
@@ -1393,7 +1445,7 @@ export default function App() {
                 sandbox="allow-scripts"
               />
             </div>
-          </div>
+          </LiquidGlass>
         </div>
       )}
 
