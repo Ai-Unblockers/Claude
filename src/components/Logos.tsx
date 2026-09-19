@@ -126,6 +126,40 @@ export function HaikuLogo({ size = 20, className = '' }: { size?: number; classN
   );
 }
 
+export function FableLogo({ size = 20, className = '' }: { size?: number; className?: string }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      aria-label="Claude Fable"
+    >
+      {/* Storybook / narrative motif */}
+      <path
+        d="M4 4C4 4 6 3 12 3C18 3 20 4 20 4V20C20 20 18 19 12 19C6 19 4 20 4 20V4Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill="none"
+      />
+      <path
+        d="M12 3V19"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <path
+        d="M7 8H10M7 11H9M14 8H17M14 11H16"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
+      <circle cx="12" cy="14" r="1.5" fill="currentColor" opacity="0.4" />
+    </svg>
+  );
+}
+
 export function OpenAILogo({ size = 20, className = '' }: { size?: number; className?: string }) {
   return (
     <svg

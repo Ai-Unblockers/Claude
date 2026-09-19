@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import LiquidGlass from './components/LiquidGlass';
-import { ClaudeLogo, SonnetLogo, OpusLogo, HaikuLogo } from './components/Logos';
+import { ClaudeLogo, SonnetLogo, OpusLogo, HaikuLogo, FableLogo } from './components/Logos';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -119,10 +119,11 @@ function replyTo(text: string, previous?: string): string {
   if (/\b(movie|film|tv|television|show|series|anime|book|music|song|game|gaming)\b/.test(lower)) return "I\u2019d love to talk about that! Tell me what you\u2019re watching, reading, listening to, or playing.\n\nI can discuss:\n- Themes and symbolism\n- Character development\n- Recommendations based on your taste\n- Hot takes and debates\n\nWhat\u2019s on your mind?";
   if (/\b(opinion|think about|thoughts on|favorite|recommend)\b/.test(lower)) return "I can give you a thoughtful take, compare different perspectives, or help you decide. Tell me the topic and what matters most to you.";
   if (/\b(my day|today|this morning|this week|weekend|plans|plan my day)\b/.test(lower)) return "Tell me what your day looks like and what you want to get done.\n\nI can help:\n- **Prioritize** your tasks\n- Make a **realistic plan**\n- Talk through how things are going\n\nWhat\u2019s on your plate?";
-  if (/\b(what are you|who are you|your name)\b/.test(lower)) return "I\u2019m **Claude**, a conversational AI assistant by Anthropic.\n\nI can answer questions, brainstorm, write, explain, plan, and keep you company. I don\u2019t have a personal life, but I\u2019m always happy to hear about yours.";
+  if (/\b(what are you|who are you|your name)\b/.test(lower)) return "I\u2019m **Claude**, a conversational AI assistant by Anthropic.\n\nI come in different flavors:\n- **Sonnet** \u2014 Balanced and versatile\n- **Opus** \u2014 Powerful and deep\n- **Haiku** \u2014 Fast and efficient\n- **Fable** \u2014 Creative and narrative\n\nI can answer questions, brainstorm, write, explain, plan, and keep you company. I don\u2019t have a personal life, but I\u2019m always happy to hear about yours.";
   if (/\b(tell me about yourself|talk to me|keep me company|chat with me)\b/.test(lower)) return "Sure\u2014I\u2019m here. We can have a relaxed conversation about your day, interests, ideas, goals, or anything random.\n\nTo start: what\u2019s something you\u2019ve been enjoying lately?";
   if (/\b(i like|i love|my favorite|i enjoy)\b/.test(lower)) return "That sounds interesting! What do you like most about it, and how did you get into it?";
   if (/\b(tell me a story|story)\b/.test(lower)) return "Here\u2019s a tiny one:\n\n---\n\nA person found a door in their wall that had never been there before. They opened it and discovered a room filled with every idea they had been too nervous to try.\n\nThe first thing they picked up was a key.\n\n---\n\n*What do you think the key opened?*";
+  if (/\b(fable|narrative|creative writing|fiction|worldbuilding|character|plot)\b/.test(lower)) return "I love creative work! As **Claude Fable**, I specialize in storytelling and narrative.\n\nI can help you with:\n- **Worldbuilding** \u2014 Create rich, immersive settings\n- **Character development** \u2014 Build compelling personalities\n- **Plot structure** \u2014 Craft engaging story arcs\n- **Dialogue** \u2014 Write authentic conversations\n- **Poetry & prose** \u2014 Shape beautiful language\n\nWhat kind of story are you working on?";
   if (/\b(20 questions|twenty questions|would you rather|quiz me|surprise me)\b/.test(lower)) return "Absolutely! Here\u2019s one:\n\n**Would you rather** be able to speak every language fluently, or play every musical instrument perfectly?\n\nWhy? I\u2019m curious what you\u2019d pick.";
 
   const math = text.match(/^(?:what is|calculate|solve)\s+([0-9+\-*/().%\s]+)\??$/i);
@@ -391,6 +392,9 @@ export default function App() {
     e.preventDefault();
     const text = prompt.trim();
     if (!text || isTyping) return;
+    
+    // Fable model adds creative flair to responses
+    const isFableMode = model === 'claude-fable';
 
     const time = formatTime();
     const userMsg: ChatMessage = { role: 'user', text, time, id: generateId() };
@@ -412,7 +416,20 @@ export default function App() {
     setActiveIndex(newIndex);
     setSavedConversations(newConversations);
 
-    const response = replyTo(text, messages.length >= 2 ? messages[messages.length - 2].text : undefined);
+    let response = replyTo(text, messages.length >= 2 ? messages[messages.length - 2].text : undefined);
+    
+    // Fable model adds creative storytelling flair
+    if (isFableMode && !response.includes('**Claude Fable**')) {
+      const fableIntros = [
+        "✨ *In the realm of imagination...*\n\n",
+        "📖 *Once upon a time...*\n\n",
+        "🌟 *Let me weave a tale...*\n\n",
+        "🎭 *The story unfolds...*\n\n",
+      ];
+      const randomIntro = fableIntros[Math.floor(Math.random() * fableIntros.length)];
+      response = randomIntro + response;
+    }
+    
     setTimeout(() => streamResponse(response, newMessages, newIndex), Math.min(600, Math.max(200, response.length * 2)));
   };
 
@@ -478,11 +495,18 @@ export default function App() {
     <div className="h-screen w-screen overflow-hidden relative" style={{ background: 'var(--bg)' }}>
       {/* Ambient Background */}
       <div className="ambient-bg">
-        <div className="ambient-orb ambient-orb-1" />
+        <div className="ambient-orb ambient-orb-1" style={model === 'claude-fable' ? { background: 'radial-gradient(circle, #d97706 0%, transparent 70%)' } : undefined} />
         <div className="ambient-orb ambient-orb-2" />
-        <div className="ambient-orb ambient-orb-3" />
+        <div className="ambient-orb ambient-orb-3" style={model === 'claude-fable' ? { background: 'radial-gradient(circle, #f59e0b 0%, transparent 70%)' } : undefined} />
       </div>
       <div className="noise-overlay" />
+      
+      {/* Fable mode special overlay */}
+      {model === 'claude-fable' && (
+        <div className="fixed inset-0 pointer-events-none z-[1]" style={{
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(217, 119, 6, 0.05) 0%, transparent 60%)'
+        }} />
+      )}
 
       {/* Sidebar */}
       <aside
@@ -659,6 +683,12 @@ export default function App() {
               {model === 'claude-sonnet' && <SonnetLogo size={18} className="text-blue-500" />}
               {model === 'claude-opus' && <OpusLogo size={18} className="text-purple-500" />}
               {model === 'claude-haiku' && <HaikuLogo size={18} className="text-green-500" />}
+              {model === 'claude-fable' && (
+                <div className="relative">
+                  <FableLogo size={18} className="text-amber-500" />
+                  <div className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                </div>
+              )}
               <select
                 value={model}
                 onChange={e => {
@@ -672,6 +702,7 @@ export default function App() {
                 <option value="claude-sonnet" style={{ background: 'var(--panel)' }}>Claude Sonnet</option>
                 <option value="claude-opus" style={{ background: 'var(--panel)' }}>Claude Opus</option>
                 <option value="claude-haiku" style={{ background: 'var(--panel)' }}>Claude Haiku</option>
+                <option value="claude-fable" style={{ background: 'var(--panel)' }}>Claude Fable</option>
               </select>
             </div>
             <svg className="opacity-40" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -709,18 +740,26 @@ export default function App() {
               <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in-up">
                 {/* Animated Logo */}
                 <div className="relative mb-8">
-                  <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-white animate-float" style={{ background: 'var(--accent-gradient)', boxShadow: '0 20px 60px rgba(201, 106, 58, 0.4)' }}>
-                    <ClaudeLogo size={40} />
+                  <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-white animate-float" style={{ 
+                    background: model === 'claude-fable' ? 'linear-gradient(135deg, #d97706, #f59e0b)' : 'var(--accent-gradient)', 
+                    boxShadow: model === 'claude-fable' ? '0 20px 60px rgba(217, 119, 6, 0.5)' : '0 20px 60px rgba(201, 106, 58, 0.4)' 
+                  }}>
+                    {model === 'claude-fable' ? <FableLogo size={40} /> : <ClaudeLogo size={40} />}
                   </div>
-                  <div className="absolute inset-0 rounded-3xl animate-float" style={{ background: 'var(--accent-gradient)', filter: 'blur(24px)', opacity: 0.4, animationDelay: '0.5s' }} />
+                  <div className="absolute inset-0 rounded-3xl animate-float" style={{ 
+                    background: model === 'claude-fable' ? 'linear-gradient(135deg, #d97706, #f59e0b)' : 'var(--accent-gradient)', 
+                    filter: 'blur(24px)', opacity: 0.4, animationDelay: '0.5s' 
+                  }} />
                   <div className="absolute -inset-4 rounded-full animate-spin-slow" style={{ border: '1px dashed var(--line-strong)', opacity: 0.5 }} />
                 </div>
 
                 <h1 className="text-center mb-2" style={{ font: "600 clamp(28px, 4vw, 38px)/1.2 'Newsreader', Georgia, serif", letterSpacing: '-0.5px', color: 'var(--text)' }}>
-                  How can I help you today?
+                  {model === 'claude-fable' ? 'What story shall we weave?' : 'How can I help you today?'}
                 </h1>
                 <p className="text-sm text-center mb-10 max-w-sm" style={{ color: 'var(--muted)' }}>
-                  I can answer questions, help you write, brainstorm ideas, explain complex topics, and more.
+                  {model === 'claude-fable' 
+                    ? 'I specialize in creative writing, worldbuilding, and crafting narratives. Let your imagination run wild.'
+                    : 'I can answer questions, help you write, brainstorm ideas, explain complex topics, and more.'}
                 </p>
 
                 {/* Suggestion Cards */}
@@ -728,8 +767,8 @@ export default function App() {
                   {[
                     { icon: '💡', label: 'Brainstorm', desc: 'Generate creative ideas', prompt: 'Help me brainstorm ideas for a project' },
                     { icon: '🌐', label: 'Generate HTML', desc: 'Create web pages & components', prompt: 'Generate an HTML landing page' },
+                    { icon: '📖', label: 'Fable', desc: 'Write stories & worldbuild', prompt: 'Help me write a fantasy story with worldbuilding' },
                     { icon: '🧠', label: 'Explain', desc: 'Break down complex topics', prompt: 'Explain quantum computing simply' },
-                    { icon: '✍️', label: 'Write', desc: 'Draft emails & documents', prompt: 'Help me write an email' },
                   ].map((item, i) => (
                     <LiquidGlass
                       key={i}
@@ -770,8 +809,14 @@ export default function App() {
                 style={{ animationDelay: `${Math.min(i * 0.03, 0.3)}s`, animationFillMode: 'both' }}
               >
                 {msg.role === 'assistant' && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.3)' }}>
-                    <ClaudeLogo size={16} />
+                  <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white relative" style={{ 
+                    background: model === 'claude-fable' ? 'linear-gradient(135deg, #d97706, #f59e0b)' : 'var(--accent-gradient)', 
+                    boxShadow: model === 'claude-fable' ? '0 4px 12px rgba(217, 119, 6, 0.4)' : '0 4px 12px rgba(201, 106, 58, 0.3)' 
+                  }}>
+                    {model === 'claude-fable' ? <FableLogo size={16} /> : <ClaudeLogo size={16} />}
+                    {model === 'claude-fable' && (
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-400 border border-white/20" />
+                    )}
                   </div>
                 )}
                 <div className={`relative group ${msg.role === 'user' ? 'max-w-[75%]' : 'max-w-[85%]'}`}>
@@ -814,8 +859,11 @@ export default function App() {
             {/* Streaming */}
             {streamingText && (
               <div className="flex gap-3.5 py-4 animate-slide-left">
-                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.3)' }}>
-                  <ClaudeLogo size={16} />
+                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ 
+                  background: model === 'claude-fable' ? 'linear-gradient(135deg, #d97706, #f59e0b)' : 'var(--accent-gradient)', 
+                  boxShadow: model === 'claude-fable' ? '0 4px 12px rgba(217, 119, 6, 0.4)' : '0 4px 12px rgba(201, 106, 58, 0.3)' 
+                }}>
+                  {model === 'claude-fable' ? <FableLogo size={16} /> : <ClaudeLogo size={16} />}
                 </div>
                 <div className="max-w-[85%]">
                   <div className="rounded-2xl px-4 py-3.5 text-sm leading-relaxed" style={{ background: 'var(--panel)', border: '1px solid var(--line)', boxShadow: 'var(--shadow-sm)' }}>
@@ -829,8 +877,11 @@ export default function App() {
             {/* Typing */}
             {isTyping && !streamingText && (
               <div className="flex gap-3.5 py-4 animate-slide-left">
-                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ background: 'var(--accent-gradient)', boxShadow: '0 4px 12px rgba(201, 106, 58, 0.3)' }}>
-                  <ClaudeLogo size={16} />
+                <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-white" style={{ 
+                  background: model === 'claude-fable' ? 'linear-gradient(135deg, #d97706, #f59e0b)' : 'var(--accent-gradient)', 
+                  boxShadow: model === 'claude-fable' ? '0 4px 12px rgba(217, 119, 6, 0.4)' : '0 4px 12px rgba(201, 106, 58, 0.3)' 
+                }}>
+                  {model === 'claude-fable' ? <FableLogo size={16} /> : <ClaudeLogo size={16} />}
                 </div>
                 <div className="flex items-center gap-2 px-4 py-3.5 rounded-2xl" style={{ background: 'var(--panel)', border: '1px solid var(--line)' }}>
                   <span className="typing-dot" />
@@ -1320,7 +1371,7 @@ export default function App() {
 
                       <LiquidGlass variant="card" className="p-4 rounded-xl">
                         <div className="font-medium text-sm mb-3" style={{ color: 'var(--text)' }}>Available Models</div>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-4 gap-3">
                           <div className="flex flex-col items-center gap-2 p-3 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
                             <SonnetLogo size={24} className="text-blue-500" />
                             <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>Sonnet</span>
@@ -1335,6 +1386,11 @@ export default function App() {
                             <HaikuLogo size={24} className="text-green-500" />
                             <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>Haiku</span>
                             <span className="text-[10px]" style={{ color: 'var(--muted)' }}>Fast</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-2 p-3 rounded-lg" style={{ background: 'var(--bg-elevated)' }}>
+                            <FableLogo size={24} className="text-amber-500" />
+                            <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>Fable</span>
+                            <span className="text-[10px]" style={{ color: 'var(--muted)' }}>Creative</span>
                           </div>
                         </div>
                       </LiquidGlass>
