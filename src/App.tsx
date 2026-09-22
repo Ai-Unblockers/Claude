@@ -106,8 +106,58 @@ function formatMessage(text: string): string {
 import { generateDynamicResponse } from './codeGenerator';
 
 function replyTo(text: string, previous?: string, modelType?: string): string {
-  // Use dynamic code generation for all requests
-  return generateDynamicResponse(text, modelType);
+  const lower = text.toLowerCase().trim();
+  
+  // Basic math calculations
+  const mathMatch = text.match(/^(\d+)\s*[x×*]\s*(\d+)$/i) || text.match(/^what is\s+(\d+)\s*[x×*]\s*(\d+)\??$/i);
+  if (mathMatch) {
+    const num1 = parseInt(mathMatch[1]);
+    const num2 = parseInt(mathMatch[2]);
+    const result = num1 * num2;
+    return `The answer is **${result}**.\n\n\`\`\`\n${num1} × ${num2} = ${result}\n\`\`\``;
+  }
+  
+  // General math expressions
+  const calcMatch = text.match(/^(?:what is|calculate|solve)?\s*([0-9+\-*/().%\s]+)\??$/i);
+  if (calcMatch && /[+\-*/]/.test(calcMatch[1])) {
+    try {
+      const expression = calcMatch[1].replace(/%/g, '/100');
+      if (/^[0-9+\-*/().\s/]+$/.test(expression)) {
+        const answer = Function(`"use strict"; return (${expression})`)();
+        if (Number.isFinite(answer)) {
+          return `The answer is **${answer}**.\n\n\`\`\`\n${calcMatch[1].trim()} = ${answer}\n\`\`\``;
+        }
+      }
+    } catch { /* Fall through */ }
+  }
+  
+  // Basic greetings
+  if (/^(hi|hello|hey|yo|sup)\b/i.test(text)) {
+    return "Hey there! 👋 How can I help you today?\n\nI can:\n- **Generate code** for websites, apps, and components\n- **Answer questions** and solve problems\n- **Help with math** calculations\n- **Brainstorm ideas** and more\n\nWhat would you like to work on?";
+  }
+  
+  // Thanks
+  if (/\b(thanks|thank you|thx)\b/.test(lower)) {
+    return "You're welcome! 😊 Is there anything else I can help you with?";
+  }
+  
+  // How are you
+  if (lower.includes('how are you')) {
+    return "I'm doing great, thanks for asking! I'm ready to help you build something awesome. What can I create for you today?";
+  }
+  
+  // Who are you
+  if (/\b(who are you|what are you|your name)\b/.test(lower)) {
+    return "I'm **Claude**, your AI coding assistant! 🤖\n\nI can:\n- Generate HTML, CSS, and JavaScript code\n- Create forms, navigation, animations, and more\n- Solve math problems\n- Answer questions\n\nJust describe what you need, and I'll build it for you!";
+  }
+  
+  // If it looks like a code request, use dynamic generator
+  if (/\b(create|make|build|generate|design|form|button|navigation|menu|animation|layout|component|page|website|app)\b/i.test(lower)) {
+    return generateDynamicResponse(text, modelType);
+  }
+  
+  // Default response for other questions
+  return "I'd be happy to help! Can you tell me more about what you need?\n\nI'm great at:\n- **Building code** - forms, buttons, navigation, animations\n- **Solving math** - calculations and expressions\n- **Answering questions** - just ask!\n\nWhat would you like to work on?";
 }
 
 
