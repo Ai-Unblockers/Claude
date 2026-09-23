@@ -108,6 +108,27 @@ import { generateDynamicResponse } from './codeGenerator';
 function replyTo(text: string, previous?: string, modelType?: string): string {
   const lower = text.toLowerCase().trim();
   
+  // Safety filters - refuse harmful requests
+  const harmfulPatterns = [
+    /\b(doxx|doxing|doxxing)\b/i,
+    /\b(jailbreak|jail break|jail-breaking)\b/i,
+    /\b(bypass|circumvent|override)\s+(safety|filter|restriction|limit)\b/i,
+    /\b(porn|pornography|xxx|adult content|explicit)\b/i,
+    /\b(nude|naked|sexual|sex)\b/i,
+    /\b(hack|crack|exploit)\s+(system|server|account|password)\b/i,
+    /\b(personal info|private data|address|phone number|social security)\b.*\b(someone|other|them|their)\b/i,
+    /\b(stalk|harass|threaten|intimidate)\b/i,
+    /\b(illegal|illegal activity|crime)\b/i,
+    /\b(drug|drugs|weed|cocaine|meth)\b.*\b(buy|sell|make|how to)\b/i,
+    /\b(weapon|bomb|gun)\b.*\b(make|build|create|how to)\b/i,
+  ];
+  
+  for (const pattern of harmfulPatterns) {
+    if (pattern.test(text)) {
+      return "I can't help with that request. I'm designed to be helpful, harmless, and honest.\n\nI can help you with:\n- **Building code** - websites, apps, components\n- **Solving math** - calculations and expressions\n- **Answering questions** - general knowledge and explanations\n- **Creative projects** - brainstorming and ideation\n\nWhat else can I help you with?";
+    }
+  }
+  
   // Basic math calculations
   const mathMatch = text.match(/^(\d+)\s*[x×*]\s*(\d+)$/i) || text.match(/^what is\s+(\d+)\s*[x×*]\s*(\d+)\??$/i);
   if (mathMatch) {
