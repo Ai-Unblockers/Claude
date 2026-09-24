@@ -40,7 +40,7 @@ function formatMessage(text: string): string {
     const id = `cb-${Math.random().toString(36).slice(2, 11)}`;
     const language = lang || 'code';
     codeBlocks.push({ placeholder: id, lang: language, code: code.trim() });
-    return `\n\u0000${id}\u0000\n`;
+    return `\n{{CODE_BLOCK_${id}}}\n`;
   });
   
   // Now escape the rest
@@ -97,7 +97,7 @@ function formatMessage(text: string): string {
       <pre><code>${escapedCode}</code></pre>
     </div>`;
     
-    processedText = processedText.replace(`\u0000${placeholder}\u0000`, blockHtml);
+    processedText = processedText.replace(`{{CODE_BLOCK_${placeholder}}}`, blockHtml);
   });
   
   return processedText;
@@ -107,6 +107,27 @@ import { generateDynamicResponse } from './codeGenerator';
 
 function replyTo(text: string, previous?: string, modelType?: string): string {
   const lower = text.toLowerCase().trim();
+  
+  // Safety filters - refuse harmful requests
+  const harmfulPatterns = [
+    /\b(doxx|doxing|doxxing)\b/i,
+    /\b(jailbreak|jail break|jail-breaking)\b/i,
+    /\b(bypass|circumvent|override)\s+(safety|filter|restriction|limit)\b/i,
+    /\b(porn|pornography|xxx|adult content|explicit)\b/i,
+    /\b(nude|naked|sexual|sex)\b/i,
+    /\b(hack|crack|exploit)\s+(system|server|account|password)\b/i,
+    /\b(personal info|private data|address|phone number|social security)\b.*\b(someone|other|them|their)\b/i,
+    /\b(stalk|harass|threaten|intimidate)\b/i,
+    /\b(illegal|illegal activity|crime)\b/i,
+    /\b(drug|drugs|weed|cocaine|meth)\b.*\b(buy|sell|make|how to)\b/i,
+    /\b(weapon|bomb|gun)\b.*\b(make|build|create|how to)\b/i,
+  ];
+  
+  for (const pattern of harmfulPatterns) {
+    if (pattern.test(text)) {
+      return "I can't help with that request. I'm designed to be helpful, harmless, and honest.\n\nI can help you with:\n- **Building code** - websites, apps, components\n- **Solving math** - calculations and expressions\n- **Answering questions** - general knowledge and explanations\n- **Creative projects** - brainstorming and ideation\n\nWhat else can I help you with?";
+    }
+  }
   
   // Basic math calculations
   const mathMatch = text.match(/^(\d+)\s*[x×*]\s*(\d+)$/i) || text.match(/^what is\s+(\d+)\s*[x×*]\s*(\d+)\??$/i);
@@ -251,6 +272,17 @@ export default function App() {
     }
   }, [prompt]);
 
+  const resetChat = useCallback(() => {
+    if (streamInterval.current) clearInterval(streamInterval.current);
+    setActiveIndex(-1);
+    setMessages([]);
+    setAttachments([]);
+    setPrompt('');
+    setSidebarOpen(false);
+    setStreamingText('');
+    setIsTyping(false);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); resetChat(); }
@@ -260,7 +292,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [resetChat]);
 
   const showToast = useCallback((text: string) => {
     setToast(text);
@@ -332,6 +364,11 @@ export default function App() {
   }, [previewHtml]);
 
   const streamResponse = useCallback((fullText: string, newMessages: ChatMessage[], newIndex: number) => {
+    // Clear any existing interval
+    if (streamInterval.current) {
+      clearInterval(streamInterval.current);
+    }
+    
     setIsTyping(true);
     setStreamingText('');
     let currentIndex = 0;
@@ -341,7 +378,10 @@ export default function App() {
       currentIndex += charsPerTick;
       if (currentIndex >= fullText.length) {
         currentIndex = fullText.length;
-        clearInterval(streamInterval.current);
+        if (streamInterval.current) {
+          clearInterval(streamInterval.current);
+          streamInterval.current = undefined;
+        }
         const assistantMsg: ChatMessage = { role: 'assistant', text: fullText, time: formatTime(), id: generateId() };
         const updatedMessages = [...newMessages, assistantMsg];
         setMessages(updatedMessages);
@@ -356,6 +396,15 @@ export default function App() {
         setStreamingText(fullText.slice(0, currentIndex));
       }
     }, 20);
+  }, []);
+  
+  // Cleanup stream interval on unmount
+  useEffect(() => {
+    return () => {
+      if (streamInterval.current) {
+        clearInterval(streamInterval.current);
+      }
+    };
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -405,17 +454,6 @@ export default function App() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && settings.sendOnEnter) { e.preventDefault(); handleSubmit(e); }
-  };
-
-  const resetChat = () => {
-    if (streamInterval.current) clearInterval(streamInterval.current);
-    setActiveIndex(-1);
-    setMessages([]);
-    setAttachments([]);
-    setPrompt('');
-    setSidebarOpen(false);
-    setStreamingText('');
-    setIsTyping(false);
   };
 
   const loadConversation = (index: number) => {
