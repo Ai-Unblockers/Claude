@@ -40,7 +40,7 @@ function formatMessage(text: string): string {
     const id = `cb-${Math.random().toString(36).slice(2, 11)}`;
     const language = lang || 'code';
     codeBlocks.push({ placeholder: id, lang: language, code: code.trim() });
-    return `\n\u0000${id}\u0000\n`;
+    return `\n{{CODE_BLOCK_${id}}}\n`;
   });
   
   // Now escape the rest
@@ -97,7 +97,7 @@ function formatMessage(text: string): string {
       <pre><code>${escapedCode}</code></pre>
     </div>`;
     
-    processedText = processedText.replace(`\u0000${placeholder}\u0000`, blockHtml);
+    processedText = processedText.replace(`{{CODE_BLOCK_${placeholder}}}`, blockHtml);
   });
   
   return processedText;
@@ -272,6 +272,17 @@ export default function App() {
     }
   }, [prompt]);
 
+  const resetChat = useCallback(() => {
+    if (streamInterval.current) clearInterval(streamInterval.current);
+    setActiveIndex(-1);
+    setMessages([]);
+    setAttachments([]);
+    setPrompt('');
+    setSidebarOpen(false);
+    setStreamingText('');
+    setIsTyping(false);
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); resetChat(); }
@@ -281,7 +292,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [resetChat]);
 
   const showToast = useCallback((text: string) => {
     setToast(text);
@@ -353,6 +364,11 @@ export default function App() {
   }, [previewHtml]);
 
   const streamResponse = useCallback((fullText: string, newMessages: ChatMessage[], newIndex: number) => {
+    // Clear any existing interval
+    if (streamInterval.current) {
+      clearInterval(streamInterval.current);
+    }
+    
     setIsTyping(true);
     setStreamingText('');
     let currentIndex = 0;
@@ -362,7 +378,10 @@ export default function App() {
       currentIndex += charsPerTick;
       if (currentIndex >= fullText.length) {
         currentIndex = fullText.length;
-        clearInterval(streamInterval.current);
+        if (streamInterval.current) {
+          clearInterval(streamInterval.current);
+          streamInterval.current = undefined;
+        }
         const assistantMsg: ChatMessage = { role: 'assistant', text: fullText, time: formatTime(), id: generateId() };
         const updatedMessages = [...newMessages, assistantMsg];
         setMessages(updatedMessages);
@@ -377,6 +396,15 @@ export default function App() {
         setStreamingText(fullText.slice(0, currentIndex));
       }
     }, 20);
+  }, []);
+  
+  // Cleanup stream interval on unmount
+  useEffect(() => {
+    return () => {
+      if (streamInterval.current) {
+        clearInterval(streamInterval.current);
+      }
+    };
   }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -426,17 +454,6 @@ export default function App() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && settings.sendOnEnter) { e.preventDefault(); handleSubmit(e); }
-  };
-
-  const resetChat = () => {
-    if (streamInterval.current) clearInterval(streamInterval.current);
-    setActiveIndex(-1);
-    setMessages([]);
-    setAttachments([]);
-    setPrompt('');
-    setSidebarOpen(false);
-    setStreamingText('');
-    setIsTyping(false);
   };
 
   const loadConversation = (index: number) => {
